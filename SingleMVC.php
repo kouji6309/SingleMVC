@@ -82,9 +82,9 @@ class SingleMVC {
             define('VROOT', '');
         }
         if (trim($u, '/') === '') {
-            $q = preg_split('/[?&]/', $q, 2);
-            $u = $q[0] ?? '';
-            $q = $q[1] ?? '';
+            if (count($t = preg_split('/[?&]/', $q, 2)) == 2) {
+				list($u, $q) = $t;
+			}
         }
         $u = trim($u, '/');
         parse_str($_S['QUERY_STRING'] = $q, $_GET);
@@ -146,7 +146,7 @@ class SingleMVC {
         if ($crp = self::cmp(explode('/', trim($u, '/')), 'default')) {
             call_user_func_array([new $crp['c'](), $crp['m']], $crp['p']);
         } else {
-            header('HTTP/1.0 404 Not Found');
+            header_404();
         }
         ob_flush();
     }
@@ -172,6 +172,7 @@ class SingleMVC {
         if (count($u) > 1 && ($cm = self::ccm($u[0], $u[1]))) {
             return ['c' => $cm[0], 'm' => $cm[1], 'p' => $p];
         } elseif ($d != '404') {
+            header_404();
             return self::cmp([], '404');
         }
         return false;
@@ -669,6 +670,13 @@ abstract class Model extends AutoLoader {
         }
         return ['header' => $hr, 'content' => $cr];
     }
+}
+
+/**
+ * 設定狀態 404
+ */
+function header_404() {
+    header('HTTP/1.1 404 Not Found');
 }
 
 /**
