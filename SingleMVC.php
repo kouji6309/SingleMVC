@@ -605,6 +605,15 @@ abstract class Model extends AutoLoader {
             curl_setopt($ch, CURLOPT_COOKIEJAR, $c);
             curl_setopt($ch, CURLOPT_COOKIEFILE, $c);
         }
+        if (!empty($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s);
+        }
+        if (!empty($o["Proxy"]) && is_string($p = $o["Proxy"])) {
+            curl_setopt($ch, CURLOPT_PROXY, $p);
+        }
+        if (!empty($o["HTTP-Version"]) && is_int($v = $o["HTTP-Version"])) {
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, $v);
+        }
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         return $ch;
     }
@@ -644,7 +653,7 @@ abstract class Model extends AutoLoader {
         for ($i = $s; $i < $e; $i++) {
             if ($cb) {
                 $t = curl_multi_getcontent($rs[$i][$n]);
-                $rs[$i] = array_merge($rs[$i], $get_header ? self::phc($t) : ['content' => $t]);
+                $r[] = array_merge($rs[$i], $get_header ? self::phc($t) : ['content' => $t]);
                 curl_close($rs[$i][$n]);
             } else {
                 $t = curl_multi_getcontent($rs[$i]);
@@ -652,7 +661,7 @@ abstract class Model extends AutoLoader {
                 curl_close($rs[$i]);
             }
         }
-        return $cb ? $rs : $r;
+        return $r;
     }
 
     /**
