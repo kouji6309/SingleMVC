@@ -600,8 +600,8 @@ abstract class Model extends AutoLoader {
         }
         if (!empty($o['Cookie']) && is_string($c = $o['Cookie'])) {
             curl_setopt($ch, CURLOPT_COOKIE, $c);
-        } elseif (defined('COOKIE_ROOT')) {
-            $c = rtrim(COOKIE_ROOT, '/\\').DS.($o['Cookie-File'] ?? 'cookie').'.tmp';
+        } elseif (defined('COOKIE_DIR')) {
+            $c = rtrim(COOKIE_DIR, '/\\').DS.($o['Cookie-File'] ?? 'cookie').'.tmp';
             curl_setopt($ch, CURLOPT_COOKIEJAR, $c);
             curl_setopt($ch, CURLOPT_COOKIEFILE, $c);
         }
@@ -760,8 +760,8 @@ function debug($msg = '') {
         var_dump($m);
         $d = $t."\tdata:\n".ob_get_clean();
     }
-    if (defined('DEBUG_ROOT')) {
-        if (file_exists($f = rtrim(DEBUG_ROOT, '/\\').DS.'debug.log') && empty($_DEBUG)) unlink($f);
+    if (defined('DEBUG_DIR')) {
+        if (file_exists($f = rtrim(DEBUG_DIR, '/\\').DS.'debug.log') && empty($_DEBUG)) unlink($f);
         file_put_contents($f, $d."\n", FILE_APPEND);
     }
     return ($_DEBUG[] = $d)."\n";
