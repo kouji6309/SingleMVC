@@ -28,6 +28,20 @@ class SingleMVC {
     public function __construct() { }
 
     /**
+     * 載入檔案
+     * @param string $file 檔案路徑
+     * @return string|boolean
+     */
+    public static function require($file) { }
+
+    /**
+     * 檢查檔案是否可以載入
+     * @param string $file 檔案路徑
+     * @return string|boolean
+     */
+    public static function require_check($file) { return ''; }
+
+    /**
      * 取得輸入的資料
      * @param string $key 索引名稱
      * @param string $type 資料總類
@@ -81,7 +95,7 @@ class Config {
 }
 
 /**
- * 實作自動載入 Model
+ * 實作自動載入
  */
 abstract class AutoLoader { }
 

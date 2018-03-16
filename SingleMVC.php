@@ -198,6 +198,7 @@ class SingleMVC {
     /**
      * 載入檔案
      * @param string $file 檔案路徑
+     * @return string|boolean
      */
     public static function require($file) {
         $f = false;
