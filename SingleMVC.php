@@ -7,18 +7,12 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 
 ob_start();
 
-if (!defined('ROOT')) define('ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
-
-if (defined('DEBUG')) {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
-}
-
 define('DS', DIRECTORY_SEPARATOR);
-define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
 define('VERSION', '1.3.7');
 header('Framework: SingleMVC '.VERSION);
+
+if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
+define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
 
 class SingleMVC {
     /**
@@ -158,19 +152,26 @@ class SingleMVC {
      * @return array|boolean
      */
     private static function cmp($u, $d = null) {
-        $p = []; $r = self::$config->routes;
+        $C = null; $M = null; $P = []; $r = self::$config->routes; $cd = SOURCE_DIR.DS.'controllers'; $pc = null;
         if (count($u) > 0 && !empty($u[0]) && lang_load($u[0])) array_shift($u);
         if (empty($u) || ($c = count($u)) == 1 && empty($u[0])) {
             if (!empty($d) && isset($r[$d]) && is_string($dr = $r[$d])) $u = explode('/', trim($dr, '/'));
         }
         if (count($u) > 0 && !empty($u[0]) && lang_load($u[0])) array_shift($u);
-        if (($c = count($u)) == 1 && !empty($u[0])) {
-            $u[1] = 'index';
-        } elseif ($c > 1) {
-            for ($i = 2; $i < count($u); $i++) $p[] = $u[$i];
+        while ($c = count($u)) {
+            if ($c > 1 && $cm = self::ccm($u[0], $u[1])) { $C = $cm[0]; $M = $cm[1]; array_shift($u); array_shift($u); $P = $u; break; }
+            if ($cm = self::ccm($u[0], 'index')) { $C = $cm[0]; $M = $cm[1]; array_shift($u); $P = $u; break; }
+            if ($pc !== $u[0]) {
+                if (self::require(($tf = $cd.DS.$u[0]).'.php')) {
+                    $pc = $u[0]; continue;
+                } elseif (file_exists($tf) && is_dir($tf)) {
+                    $cd = $tf;
+                }
+                array_shift($u);
+            } else { break; }
         }
-        if (count($u) > 1 && ($cm = self::ccm($u[0], $u[1]))) {
-            return ['c' => $cm[0], 'm' => $cm[1], 'p' => $p];
+        if ($C != null && $M != null) {
+            return ['c' => $C, 'm' => $M, 'p' => $P];
         } elseif ($d != '404') {
             header_404();
             return self::cmp([], '404');
@@ -186,13 +187,10 @@ class SingleMVC {
      */
     private static function ccm($c, $m) {
         $f = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-        for ($i = 0; $i < 2; $i++) {
-            if ($f($c, $rm = ($m.'_'.self::$hm))) {
-                return [$c, $rm];
-            } elseif (self::$hm == 'get' && $f($c, $m)) {
-                return [$c, $m];
-            }
-            if (!$i) self::require(SOURCE_DIR.DS.'controllers'.DS.$c.'.php');
+        if ($f($c, $rm = ($m.'_'.self::$hm))) {
+            return [$c, $rm];
+        } elseif (self::$hm == 'get' && $f($c, $m)) {
+            return [$c, $m];
         }
         return false;
     }
@@ -201,8 +199,10 @@ class SingleMVC {
      * 載入檔案
      * @param string $file 檔案路徑
      */
-    private static function require($file) {
+    public static function require($file) {
+        $f = false;
         if ($f = self::require_check($file)) require_once $f;
+        return $f;
     }
 
     /**
@@ -210,7 +210,7 @@ class SingleMVC {
      * @param string $file 檔案路徑
      * @return string|boolean
      */
-    private static function require_check($file) {
+    public static function require_check($file) {
         if (!ends_with($f = $file, '.php')) $f .= '.php';
         return file_exists($f) && is_readable($f) ? $f : false;
     }
@@ -232,8 +232,7 @@ class SingleMVC {
             if (is_array($d) && isset($d[$k])) {
                 return $d[$k];
             } else {
-                $t = $k;
-                $k = null;
+                $t = $k; $k = null;
             }
         }
         $d = null; $t = strtolower($t);
@@ -311,8 +310,8 @@ class SingleMVC {
         if (!self::$ld && !empty(self::$lang[$l])) {
             self::$ld = $l; self::$lang = $ol[$l];
             define('LANG', $l);
-        } elseif (!self::$ld && $lp = self::require_check(SOURCE_DIR.DS.'lang'.DS.$l)) {
-            self::$ld = $l; require $lp;
+        } elseif (!self::$ld && self::require(SOURCE_DIR.DS.'lang'.DS.$l)) {
+            self::$ld = $l;
             if (count(self::$lang) == 1 && isset(self::$lang[$l])) self::$lang = self::$lang[$l];
             define('LANG', $l);
         }
@@ -341,18 +340,28 @@ class Config {
 }
 
 /**
- * 實作自動載入 Model
+ * 實作自動載入
  */
 abstract class AutoLoader {
     public function __construct() {
         spl_autoload_register(function ($c) {
-            $c = ltrim($c, '\\');
-            $f  = SOURCE_DIR.DS.'models';
-            if ($i = mb_strrpos($c, '\\')) {
-                $f .= DS.str_replace('\\', DS, mb_substr($c, 0, $i)).DS;
-                $c = mb_substr($c, $i + 1);
+            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+            if (!SingleMVC::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'php') && strpos($c, '\\') === false) {
+                $sd = function ($p) use (&$sd) {
+                    if (file_exists($p) && is_dir($p)) {
+                        $r = ['d' => [], 'f' => []];
+                        $l = array_diff(scandir($p), ['.', '..']);
+                        foreach ($l as $i) {
+                            $i = $p.DS.$i; if (is_dir($i)) { $r['d'][] = $i; continue; } if (is_file($i)) { $r['f'][] = $i; continue; }
+                        }
+                        sort($r['d']); sort($r['f']);
+                        foreach ($r['d'] as $i) $r['f'] = array_merge($r['f'], $sd($i)['f']);
+                        return $r;
+                    }
+                    return false;
+                };
+                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, $c.'.php') && SingleMVC::require($i)) return;
             }
-            if (file_exists($f = $f.DS.$c.'.php') && is_readable($f)) require $f;
         });
     }
 }
@@ -886,5 +895,12 @@ function jwt_decode($token, $secret) {
 }
 
 SingleMVC::$config = new Config();
-register_shutdown_function(function () { new SingleMVC(); exit(); });
+register_shutdown_function(function () {
+    if (defined('DEBUG')) {
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        error_reporting(E_ALL);
+    }
+    new SingleMVC(); exit();
+});
 #endregion
