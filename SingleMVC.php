@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.3.7');
+define('VERSION', '1.3.20');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));

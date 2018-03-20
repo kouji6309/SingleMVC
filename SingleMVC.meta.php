@@ -1,8 +1,9 @@
 <?php
 define('ROOT', '');
+define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '');
+define('VERSION', '1.3.20');
 class SingleMVC {
     /**
      * 取得或設定程式組態
