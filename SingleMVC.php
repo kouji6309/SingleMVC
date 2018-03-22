@@ -407,7 +407,7 @@ abstract class Model extends AutoLoader {
      */
     protected $db_statement = null;
 
-    private static function db_connect() {
+    protected function db_connect() {
         try {
             if (self::$db_pdo == null) {
                 $c = SingleMVC::$config;
@@ -428,7 +428,7 @@ abstract class Model extends AutoLoader {
      * @return PDOStatement
      */
     protected function db_query($statement) {
-        if (self::db_connect()) return $this->db_statement = self::$db_pdo->query($statement);
+        if ($this->db_connect()) return $this->db_statement = self::$db_pdo->query($statement);
         return false;
     }
 
@@ -438,7 +438,7 @@ abstract class Model extends AutoLoader {
      * @return PDOStatement
      */
     protected function db_prepare($statement) {
-        if (self::db_connect()) return $this->db_statement = self::$db_pdo->prepare($statement);
+        if ($this->db_connect()) return $this->db_statement = self::$db_pdo->prepare($statement);
         return false;
     }
 
@@ -514,7 +514,7 @@ abstract class Model extends AutoLoader {
      * @return boolean
      */
     protected function db_begin() {
-        if (self::db_connect()) return self::$db_pdo->beginTransaction();
+        if ($this->db_connect()) return self::$db_pdo->beginTransaction();
         return false;
     }
 
@@ -523,7 +523,7 @@ abstract class Model extends AutoLoader {
      * @return boolean
      */
     protected function db_commit() {
-        if (self::db_connect()) return self::$db_pdo->commit();
+        if ($this->db_connect()) return self::$db_pdo->commit();
         return false;
     }
 
@@ -532,7 +532,7 @@ abstract class Model extends AutoLoader {
      * @return boolean
      */
     protected function db_rollBack() {
-        if (self::db_connect()) return self::$db_pdo->rollBack();
+        if ($this->db_connect()) return self::$db_pdo->rollBack();
         return false;
     }
 
@@ -896,12 +896,5 @@ function jwt_decode($token, $secret) {
 }
 
 SingleMVC::$config = new Config();
-register_shutdown_function(function () {
-    if (defined('DEBUG')) {
-        ini_set('display_errors', 1);
-        ini_set('display_startup_errors', 1);
-        error_reporting(E_ALL);
-    }
-    new SingleMVC(); exit();
-});
+if (!defined('PAUSE')) register_shutdown_function(function () { new SingleMVC(); exit(); });
 #endregion
