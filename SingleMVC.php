@@ -576,6 +576,9 @@ abstract class Model extends AutoLoader {
         $ch = curl_init();
         $m = strtoupper($method); $u = $url; $d = $data; $o = $option;
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m);
+        if (!empty($option['Option']) && is_array($oo = $o['Option'])) {
+            curl_setopt_array($ch, $oo);
+        }
         if ($m == 'GET') {
             curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d));
         } else {
@@ -605,8 +608,6 @@ abstract class Model extends AutoLoader {
         }
         if (!empty($o['User-Agent']) && is_string($ua = $o['User-Agent'])) {
             curl_setopt($ch, CURLOPT_USERAGENT, $ua);
-        } else {
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
         }
         if (!empty($o['Cookie']) && is_string($c = $o['Cookie'])) {
             curl_setopt($ch, CURLOPT_COOKIE, $c);
