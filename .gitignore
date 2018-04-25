@@ -3,3 +3,5 @@
 *.phpproj
 *.phpproj.user
 *.sln
+/SingleMVC.wiki
+/SingleMVC.wiki/*

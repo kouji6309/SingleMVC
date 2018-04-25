@@ -22,4 +22,4 @@ Single MVC 是一個方便使用、功能完整、單一檔案的 PHP 框架。�
 
 ## 授權
 
-這個專案使用 MIT 授權條款 ，詳細條款在 [LICENSE.md](LICENSE.md)
+這個專案使用 MIT 授權條款 ，詳細條款在 [LICENSE](LICENSE.md)

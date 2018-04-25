@@ -3,7 +3,7 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.3.20');
+define('VERSION', '1.4.25');
 class SingleMVC {
     /**
      * 取得或設定程式組態
@@ -294,7 +294,7 @@ $_DEBUG = [];
 
 /**
  * 記錄除錯資訊
- * @param string $msg 訊息
+ * @param mixed $msg 訊息
  * @return string
  */
 function debug($msg = '') { return ""; }
@@ -337,7 +337,7 @@ function check_for_updates($details = false) { return []; }
 
 /**
  * JWT 編碼
- * @param string $data 資料
+ * @param mixed $data 資料
  * @param string $secret 密鑰
  * @return string
  */
@@ -347,6 +347,6 @@ function jwt_encode($data, $secret) { return ""; }
  * JWT 解碼與驗證
  * @param string $token TOKEN內容
  * @param string $secret 密鑰
- * @return array|boolean
+ * @return mixed
  */
 function jwt_decode($token, $secret) { return []; }

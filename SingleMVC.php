@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.3.20');
+define('VERSION', '1.4.25');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -766,7 +766,7 @@ $_DEBUG = [];
 
 /**
  * 記錄除錯資訊
- * @param string $msg 訊息
+ * @param mixed $msg 訊息
  * @return string
  */
 function debug($msg = '') {
@@ -864,7 +864,7 @@ function check_for_updates($details = false) {
 
 /**
  * JWT 編碼
- * @param string $data 資料
+ * @param mixed $data 資料
  * @param string $secret 密鑰
  * @return string
  */
@@ -879,7 +879,7 @@ function jwt_encode($data, $secret) {
  * JWT 解碼與驗證
  * @param string $token TOKEN內容
  * @param string $secret 密鑰
- * @return array|boolean
+ * @return mixed
  */
 function jwt_decode($token, $secret) {
 	if (!is_string($token) || !is_string($secret)) return false;
