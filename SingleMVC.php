@@ -84,7 +84,7 @@ class SingleMVC {
         parse_str($_S['QUERY_STRING'] = $q, $_GET);
         if (!empty(self::$config->routes) && ($r = self::$config->routes) && is_array($r)) {
             foreach ($r as $k => $v) {
-                if (preg_match($k = '#^'.$k.'$#', $u)) {
+                if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
                     $u = preg_replace($k, $v, $u); break;
                 }
             }
@@ -329,7 +329,7 @@ class Config {
 
     /**
      * 取得或設定 資料庫設定
-     * @var string
+     * @var array
      */
     public $db = [];
 

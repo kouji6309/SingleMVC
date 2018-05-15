@@ -84,7 +84,7 @@ class Config {
 
     /**
      * 取得或設定 資料庫設定
-     * @var string
+     * @var array
      */
     public $db = [];
 
