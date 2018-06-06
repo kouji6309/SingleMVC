@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.4.25');
+define('VERSION', '1.6.6');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -869,9 +869,9 @@ function check_for_updates($details = false) {
  * @return string
  */
 function jwt_encode($data, $secret) {
-    $h = base64_encode(json_encode(['alg' => 'HS256', "typ"=> "JWT"]));
-    $p = base64_encode(json_encode($data));
-    $s = base64_encode(hash_hmac('sha256', $h.'.'.$p, $secret, true));
+    $h = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', "typ"=> "JWT"])));
+    $p = str_replace('=', '', base64_encode(json_encode($data)));
+    $s = str_replace('=', '', base64_encode(hash_hmac('sha256', $h.'.'.$p, $secret, true)));
     return $h.'.'.$p.'.'.$s;
 }
 

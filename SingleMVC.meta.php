@@ -3,7 +3,7 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.4.25');
+define('VERSION', '1.6.6');
 class SingleMVC {
     /**
      * 取得或設定程式組態
