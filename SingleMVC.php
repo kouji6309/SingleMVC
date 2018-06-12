@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.6.6');
+define('VERSION', '1.6.13');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -39,6 +39,24 @@ class SingleMVC {
     private static $fd = [];
     private static $is_run = false;
     private static $ld = '';
+    private static $hsc = [
+        100 => 'Continue', 101 => 'Switching Protocols', 102 => 'Processing', 200 => 'OK', 201 => 'Created', 202 => 'Accepted',
+        203 => 'Non-authoritative Information', 204 => 'No Content', 205 => 'Reset Content', 206 => 'Partial Content',
+        207 => 'Multi-Status',  208 => 'Already Reported', 226 => 'IM Used', 300 => 'Multiple Choices', 301 => 'Moved Permanently',
+        302 => 'Found', 303 => 'See Other', 304 => 'Not Modified', 305 => 'Use Proxy', 307 => 'Temporary Redirect',
+        308 => 'Permanent Redirect', 400 => 'Bad Request', 401 => 'Unauthorized', 402 => 'Payment Required', 403 => 'Forbidden',
+        404 => 'Not Found', 405 => 'Method Not Allowed', 406 => 'Not Acceptable', 407 => 'Proxy Authentication Required',
+        408 => 'Request Timeout', 409 => 'Conflict', 410 => 'Gone', 411 => 'Length Required', 412 => 'Precondition Failed',
+        413 => 'Payload Too Large', 414 => 'Request-URI Too Long', 415 => 'Unsupported Media Type',
+        416 => 'Requested Range Not Satisfiable', 417 => 'Expectation Failed', 418 => 'I\'m a teapot', 421 => 'Misdirected Request',
+        422 => 'Unprocessable Entity', 423 => 'Locked', 424 => 'Failed Dependency', 426 => 'Upgrade Required',
+        428 => 'Precondition Required', 429 => 'Too Many Requests', 431 => 'Request Header Fields Too Large',
+        444 => 'Connection Closed Without Response', 451 => 'Unavailable For Legal Reasons', 499 => 'Client Closed Request',
+        500 => 'Internal Server Error', 501 => 'Not Implemented', 502 => 'Bad Gateway', 503 => 'Service Unavailable',
+        504 => 'Gateway Timeout', 505 => 'HTTP Version Not Supported', 506 => 'Variant Also Negotiates',
+        507 => 'Insufficient Storage', 508 => 'Loop Detected', 510 => 'Not Extended', 511 => 'Network Authentication Required',
+        599 => 'Network Connect Timeout Error',
+    ];
 
     /**
      * 產生 SingleMVC 實例並執行
@@ -218,22 +236,26 @@ class SingleMVC {
 
     /**
      * 取得輸入的資料
-     * @param string $key 索引名稱
+     * @param mixed $key 索引名稱
      * @param string $type 資料總類
      * @return mixed
      */
     public static function input($key = null, $type = null) {
         $d = self::$hm == 'get' ? self::$ud : self::$cd;
         $k = $key; $t = $type;
-        if ($k !== null && !is_string($k)) return null;
+        if ($k !== null && !is_string($k) && !is_array($k)) return null;
         if ($t !== null && !is_string($t)) return null;
         if ($k === null && $t === null) {
             return $d;
         } elseif ($k !== null && $t === null) {
-            if (is_array($d) && isset($d[$k])) {
-                return $d[$k];
+            if (is_string($k)) {
+                if (is_array($d) && isset($d[$k])) {
+                    return $d[$k];
+                } else {
+                    $t = $k; $k = null;
+                }
             } else {
-                $t = $k; $k = null;
+                $t = self::$hm;
             }
         }
         $d = null; $t = strtolower($t);
@@ -244,6 +266,11 @@ class SingleMVC {
         } elseif ($t == self::$hm && in_array($t, ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'])) {
             $d = self::$cd;
         }
+        if (is_array($k) && is_array($d)) {
+            $td = $d; $f = false;
+            foreach ($k as $i) if ($f = isset($td[$i])) { $td = $td[$i]; } else { break; }
+            return $f ? $td : null;
+        }
         return $k === null || $d === null ? $d : (is_array($d) ? $d[$k] ?? null : null);
     }
 
@@ -251,12 +278,13 @@ class SingleMVC {
      * 輸出 View
      * @param string $view View 名稱
      * @param mixed $data 資料
-     * @param boolean $cr 是否回傳輸出結果
+     * @param mixed $flag 附加選項
      * @return null|string
      */
-    public static function output($view, $data = [], $cr = false) {
-        if ($cr) ob_start(); lang();
-        $d = $data; $v = trim(str_replace(['\\', '/'], DS, $ov = $view), DS);
+    public static function output($view, $data = [], $flag = false) {
+        if ($flag === true) ob_start();
+        if (is_int($flag) && !empty(self::$hsc[$flag])) header('HTTP/1.1 '.$flag.' '.self::$hsc[$flag]);
+        lang(); $d = $data; $v = trim(str_replace(['\\', '/'], DS, $ov = $view), DS);
         if (!empty(self::$view[$ov])) {
             header('Content-Type: text/html; charset=utf-8');
             if (is_object($d)) $d = get_object_vars($d);
@@ -272,15 +300,15 @@ class SingleMVC {
             echo json_encode($d);
         } elseif ($v == 'html') {
             header('Content-Type: text/html; charset=utf-8');
-            echo $d;
+            echo $d ?: '';
         } elseif ($v == 'text') {
             header('Content-Type: text/plain; charset=utf-8');
-            echo $d;
+            echo $d ?: '';
         } else {
             header('Content-Type: application/octet-stream');
-            echo $d;
+            echo $d ?: '';
         }
-        return $cr ? ob_get_clean() : null;
+        return $flag === true ? ob_get_clean() : null;
     }
 
     /**
@@ -293,7 +321,7 @@ class SingleMVC {
         if (empty(self::$ld)) lang_load(self::$config->lang);
         if (is_string($k)) $k = [$k];
         if (is_array($k) && !empty(self::$lang) && ($l = self::$lang) && !($f = false)) {
-            foreach ($k as $i) if (is_string($i) && $f = isset($l[$i])) { $l = $l[$i]; break; }
+            foreach ($k as $i) if (is_string($i) && $f = isset($l[$i])) { $l = $l[$i]; } else { $f = false; break; }
             if ($f && (is_string($l) || is_array($l))) $r = $l;
         }
         return $r;
@@ -696,12 +724,12 @@ abstract class Model extends AutoLoader {
  * 設定狀態 404
  */
 function header_404() {
-    header('HTTP/1.1 404 Not Found');
+    output('html', '', 404);
 }
 
 /**
  * 取得輸入的資料
- * @param string $key 索引名稱
+ * @param mixed $key 索引名稱
  * @param string $type 資料總類
  * @return mixed
  */
@@ -713,11 +741,11 @@ function input($key = null, $type = null) {
  * 輸出 View
  * @param string $view View 名稱
  * @param mixed $data 資料
- * @param boolean $clean 是否回傳輸出結果
+ * @param mixed $flag 附加選項
  * @return null|string
  */
-function output($view, $data = [], $clean = false) {
-    return SingleMVC::output($view, $data, $clean);
+function output($view, $data = [], $flag = false) {
+    return SingleMVC::output($view, $data, $flag);
 }
 
 /**

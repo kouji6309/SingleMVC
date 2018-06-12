@@ -3,7 +3,7 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.6.6');
+define('VERSION', '1.6.13');
 class SingleMVC {
     /**
      * 取得或設定程式組態
@@ -44,7 +44,7 @@ class SingleMVC {
 
     /**
      * 取得輸入的資料
-     * @param string $key 索引名稱
+     * @param mixed $key 索引名稱
      * @param string $type 資料總類
      * @return mixed
      */
@@ -54,10 +54,10 @@ class SingleMVC {
      * 輸出 View
      * @param string $view View 名稱
      * @param mixed $data 資料
-     * @param boolean $cr 是否回傳輸出結果
+     * @param mixed $flag 附加選項
      * @return null|string
      */
-    public static function output($view, $data = [], $cr = false) { return ""; }
+    public static function output($view, $data = [], $flag = false) { return ""; }
 
     /**
      * 取得語系內容
@@ -241,7 +241,7 @@ function header_404() { }
 
 /**
  * 取得輸入的資料
- * @param string $key 索引名稱
+ * @param mixed $key 索引名稱
  * @param string $type 資料總類
  * @return mixed
  */
@@ -251,10 +251,10 @@ function input($key = null, $type = null) { return ""; }
  * 輸出 View
  * @param string $view View 名稱
  * @param mixed $data 資料
- * @param boolean $clean 是否回傳輸出結果
+ * @param mixed $flag 附加選項
  * @return null|string
  */
-function output($view, $data = [], $clean = false) { return ""; }
+function output($view, $data = [], $flag = false) { return ""; }
 
 /**
  * 取得語系內容
