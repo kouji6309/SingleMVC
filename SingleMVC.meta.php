@@ -110,14 +110,14 @@ abstract class Controller extends AutoLoader { }
  */
 abstract class Model extends AutoLoader {
     /**
-     * 加密密碼
+     * 建立密碼的雜湊值
      * @param string $password 輸入密碼
      * @return string
      */
     protected static function password_hash($password) { return ""; }
 
     /**
-     * 驗證密碼
+     * 驗證密碼與雜湊值
      * @param string $password 輸入密碼
      * @param string $hash 已加密的密碼
      * @return boolean

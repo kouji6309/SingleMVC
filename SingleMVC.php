@@ -231,6 +231,7 @@ class SingleMVC {
      */
     public static function require_check($file) {
         if (!ends_with($f = $file, '.php')) $f .= '.php';
+        $f = str_replace(['\\', '/'], DS, $f);
         return file_exists($f) && is_readable($f) ? $f : false;
     }
 
@@ -405,7 +406,7 @@ abstract class Controller extends AutoLoader { }
  */
 abstract class Model extends AutoLoader {
     /**
-     * 加密密碼
+     * 建立密碼的雜湊值
      * @param string $password 輸入密碼
      * @return string
      */
@@ -414,7 +415,7 @@ abstract class Model extends AutoLoader {
     }
 
     /**
-     * 驗證密碼
+     * 驗證密碼與雜湊值
      * @param string $password 輸入密碼
      * @param string $hash 已加密的密碼
      * @return boolean
@@ -573,9 +574,9 @@ abstract class Model extends AutoLoader {
      * @return boolean|string
      */
     protected function db_debug() {
-        if ($statement = $this->db_statement) {
+        if ($s = $this->db_statement) {
             ob_start();
-            $statement->debugDumpParams();
+            $s->debugDumpParams();
             return ob_get_clean();
         }
         return false;
