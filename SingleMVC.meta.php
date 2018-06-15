@@ -137,6 +137,12 @@ abstract class Model extends AutoLoader {
     protected $db_statement = null;
 
     /**
+     * 連線 SQL 資料庫
+     * @return boolean
+     */
+    protected function db_connect() { }
+
+    /**
      * 執行 SQL 指令
      * @param string $statement SQL 指令
      * @return PDOStatement

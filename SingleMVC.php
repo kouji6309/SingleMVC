@@ -435,6 +435,10 @@ abstract class Model extends AutoLoader {
      */
     protected $db_statement = null;
 
+    /**
+     * 連線 SQL 資料庫
+     * @return boolean
+     */
     protected function db_connect() {
         try {
             if (self::$db_pdo == null) {
