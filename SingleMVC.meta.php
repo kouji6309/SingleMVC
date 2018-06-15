@@ -164,7 +164,7 @@ abstract class Model extends AutoLoader {
 
     /**
      * 取得資料
-     * @param boolean $force_array 單筆資料仍傳回陣列
+     * @param boolean $force_array 單筆資料仍傳回二維陣列
      * @return array
      */
     protected function db_select($force_array = false) { return []; }
