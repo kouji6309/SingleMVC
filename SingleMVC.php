@@ -305,6 +305,20 @@ class SingleMVC {
         } elseif ($v == 'text') {
             header('Content-Type: text/plain; charset=utf-8');
             echo $d ?: '';
+        } elseif ($v == 'jpeg') {
+            header('Content-Type: image/jpeg');
+            if (is_string($d)) {
+                echo $d ?: '';
+            } elseif (is_resource($d)) {
+                imagejpeg($d);
+            }
+        } elseif ($v == 'png') {
+            header('Content-Type: image/png');
+            if (is_string($d)) {
+                echo $d ?: '';
+            } elseif (is_resource($d)) {
+                imagepng($d);
+            }
         } else {
             header('Content-Type: application/octet-stream');
             echo $d ?: '';
@@ -390,7 +404,7 @@ abstract class AutoLoader {
                     }
                     return false;
                 };
-                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, $c.'.php') && SingleMVC::require($i)) return;
+                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, DS.$c.'.php') && SingleMVC::require($i)) return;
             }
         });
     }
