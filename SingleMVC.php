@@ -84,7 +84,7 @@ class SingleMVC {
         $q = $u['query'] ?? '';
         $u = urldecode($u['path'] ?? '');
         if (!empty($_S['SCRIPT_NAME']) && ($sn = $_S['SCRIPT_NAME'])) {
-            define('VROOT', $sd = dirname($sn));
+            define('VROOT', rtrim(str_replace(DS, '/', $sd = dirname($sn)), '/'));
             if (mb_strpos($u, $sn) === 0) {
                 $u = mb_substr($u, mb_strlen($sn));
             } elseif (mb_strpos($u, $sd) === 0) {
