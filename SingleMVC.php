@@ -84,7 +84,7 @@ class SingleMVC {
         $q = $u['query'] ?? '';
         $u = urldecode($u['path'] ?? '');
         if (!empty($_S['SCRIPT_NAME']) && ($sn = $_S['SCRIPT_NAME'])) {
-            define('VROOT', $sd = dirname($sn));
+            define('VROOT', rtrim(str_replace(DS, '/', $sd = dirname($sn)), '/'));
             if (mb_strpos($u, $sn) === 0) {
                 $u = mb_substr($u, mb_strlen($sn));
             } elseif (mb_strpos($u, $sd) === 0) {
@@ -180,12 +180,12 @@ class SingleMVC {
             if ($c > 1 && $cm = self::ccm($u[0], $u[1])) { $C = $cm[0]; $M = $cm[1]; array_shift($u); array_shift($u); $P = $u; break; }
             if ($cm = self::ccm($u[0], 'index')) { $C = $cm[0]; $M = $cm[1]; array_shift($u); $P = $u; break; }
             if ($pc !== $u[0]) {
+                $pc = $u[0];
                 if (self::require(($tf = $cd.DS.$u[0]).'.php')) {
-                    $pc = $u[0]; continue;
+                    array_shift($u); continue;
                 } elseif (file_exists($tf) && is_dir($tf)) {
-                    $cd = $tf;
+                    array_shift($u); $cd = $tf;
                 }
-                array_shift($u);
             } else { break; }
         }
         if ($C != null && $M != null) {
