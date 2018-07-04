@@ -80,7 +80,14 @@ class SingleMVC {
         self::require(SOURCE_DIR.DS.'config.php');
         // 處理路由
         $_S = $_SERVER;
-        $u = parse_url('http://host'.$_S['REQUEST_URI']);
+        $u = parse_url('http://host'.(function ($s) {
+            $s = preg_split('/(?!^)(?=.)/u', $s); $r = '';
+            foreach ($s as $c) {
+                if (strlen($c) > 1) $c = urlencode($c);
+                $r .= $c;
+            }
+            return $r;
+        })($_S['REQUEST_URI']));
         $q = $u['query'] ?? '';
         $u = urldecode($u['path'] ?? '');
         if (!empty($_S['SCRIPT_NAME']) && ($sn = $_S['SCRIPT_NAME'])) {
@@ -99,7 +106,7 @@ class SingleMVC {
 			}
         }
         $u = trim($u, '/');
-        parse_str($_S['QUERY_STRING'] = $q, $_GET);
+        mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
         if (!empty(self::$config->routes) && ($r = self::$config->routes) && is_array($r)) {
             foreach ($r as $k => $v) {
                 if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
@@ -115,7 +122,7 @@ class SingleMVC {
         if (($ip = $hm == 'post') && $ct == 'application/x-www-form-urlencoded') {
             self::$cd = $_POST;
         } elseif (!($ig = $hm == 'get') && $ct == 'application/x-www-form-urlencoded') {
-            parse_str($raw, $tp1);
+            mb_parse_str($raw, $tp1);
             self::$cd = $tp1;
         } elseif ($ip && $ct == 'multipart/form-data') {
             self::$cd = $_POST;
@@ -133,7 +140,7 @@ class SingleMVC {
                         preg_match('/Content-Type: (.*)?/', $m[3], $t);
                         $p = sys_get_temp_dir().DS.'php'.substr(sha1(random_bytes(10)), 0, 6);
                         $e = file_put_contents($p, preg_replace('/Content-Type: (.*)[^\n\r]/', '', $m[3]));
-                        parse_str(urlencode($m[1]).'=temp', $tp2);
+                        mb_parse_str(urlencode($m[1]).'=temp', $tp2);
                         while (is_array($tp2 = $tp2[$ks[] = key($tp2)]));
                         $ks = array_reverse($ks);
                         $id = array_pop($ks);
@@ -141,7 +148,7 @@ class SingleMVC {
                         foreach ($tp2 as $l => $v) { $d[$id][$l] = $v; foreach ($ks as $k) $d[$id][$l] = [$k => $d[$id][$l]]; }
                         $bk = ['f' => $d];
                     } elseif (preg_match('/^Content-Disposition: .*; name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $i, $m)) {
-                        parse_str(urlencode($m[1]).'='.urlencode($m[2]), $tp2);
+                        mb_parse_str(urlencode($m[1]).'='.urlencode($m[2]), $tp2);
                         $bk = ['c' => $tp2];
                     }
                     $tp1 = array_merge_recursive($tp1, $bk);
