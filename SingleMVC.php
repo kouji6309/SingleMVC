@@ -37,6 +37,7 @@ class SingleMVC {
     private static $ud = [];
     private static $cd = [];
     private static $fd = [];
+    private static $pd = [];
     private static $is_run = false;
     private static $ld = '';
     private static $hsc = [
@@ -296,12 +297,14 @@ class SingleMVC {
         if (!empty(self::$view[$ov])) {
             header('Content-Type: text/html; charset=utf-8');
             if (is_object($d)) $d = get_object_vars($d);
-            extract($d);
+            self::$pd[] = $d;
+            foreach (self::$pd as $d) extract($d);
             eval('?>'.self::$view[$ov]);
         } elseif ($vp = self::require_check(SOURCE_DIR.DS.'views'.DS.$v)) {
             header('Content-Type: text/html; charset=utf-8');
             if (is_object($d)) $d = get_object_vars($d);
-            extract($d);
+            self::$pd[] = $d;
+            foreach (self::$pd as $d) extract($d);
             require $vp;
         } elseif ($v == 'json') {
             header('Content-Type: application/json');
