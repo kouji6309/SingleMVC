@@ -400,7 +400,7 @@ abstract class AutoLoader {
     public function __construct() {
         spl_autoload_register(function ($c) {
             $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
-            if (!SingleMVC::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'php') && strpos($c, '\\') === false) {
+            if (!SingleMVC::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
                 $sd = function ($p) use (&$sd) {
                     if (file_exists($p) && is_dir($p)) {
                         $r = ['d' => [], 'f' => []];
