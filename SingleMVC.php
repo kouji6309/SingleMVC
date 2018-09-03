@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.8.25');
+define('VERSION', '1.9.3');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -722,11 +722,17 @@ abstract class Model extends AutoLoader {
      */
     private static function phc($r) {
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
-        $hs = explode("\r\n", $h);
-        $hr = ['Status' => array_shift($hs)];
-        foreach ($hs as $h) {
-            list($k, $v) = explode(":", $h, 2);
-            $hr[trim($k)] = ltrim($v);
+        $hr = [];
+        $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
+        foreach ($fs as $f) {
+            if (preg_match('/([^:]+): (.+)/m', $f, $m) ) {
+                $m[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) { return strtoupper($r[0]); }, strtolower(trim($m[1])));
+                if (isset($hr[$m[1]])) {
+                    $hr[$m[1]] = [$hr[$m[1]], $m[2]];
+                } else {
+                    $hr[$m[1]] = trim($m[2]);
+                }
+            }
         }
         return ['header' => $hr, 'content' => $cr];
     }
