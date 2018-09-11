@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.9.3');
+define('VERSION', '1.9.11');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -51,7 +51,7 @@ class SingleMVC {
     private static function run() {
         if (self::$is_run) return;
         self::$is_run = true;
-        session_start();
+        session_start(['read_and_close' => true]);
         // 載入第三方套件
         foreach (['3rd', 'helper'] as $f) {
             if (is_dir($h = SOURCE_DIR.DS.$f)) {
