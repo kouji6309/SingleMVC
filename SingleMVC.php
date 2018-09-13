@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.9.11');
+define('VERSION', '1.9.13');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -722,8 +722,8 @@ abstract class Model extends AutoLoader {
      */
     private static function phc($r) {
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
-        $hr = [];
         $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
+        $hr = ['Status' => intval(explode(' ', array_shift($fs))[1]??0)];
         foreach ($fs as $f) {
             if (preg_match('/([^:]+): (.+)/m', $f, $m) ) {
                 $m[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) { return strtoupper($r[0]); }, strtolower(trim($m[1])));
