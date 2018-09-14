@@ -230,7 +230,7 @@ abstract class Model extends AutoLoader {
     protected static function request_async($url, $method = 'get', $data = [], $option = []) { return null; }
 
     /**
-     * 執行多個非同步請求
+     * 執行一個或多個非同步請求
      * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度

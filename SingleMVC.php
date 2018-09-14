@@ -613,63 +613,64 @@ abstract class Model extends AutoLoader {
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) {
         $ch = curl_init();
+        if (!$ch) return false;
         $m = strtoupper($method); $u = $url; $d = $data; $o = $option;
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m);
+        if (!curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m)) return false;
         if (!empty($option['Option']) && is_array($oo = $o['Option'])) {
-            curl_setopt_array($ch, $oo);
+            if (!curl_setopt_array($ch, $oo)) return false;
         }
         if ($m == 'GET') {
-            curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d));
+            if (!curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d))) return false;
         } else {
             if (is_array($d) && isset($d['_GET'])) {
-                curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d['_GET']));
+                if (!curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d['_GET']))) return false;
                 unset($d['_GET']);
             } else {
-                curl_setopt($ch, CURLOPT_URL, $u);
+                if (!curl_setopt($ch, CURLOPT_URL, $u)) return false;
             }
-            curl_setopt($ch, CURLOPT_POST, true);
+            if (!curl_setopt($ch, CURLOPT_POST, true)) return false;
             $hct = ($ct = '1') && (!empty($o['Header']['Content-Type']) && is_string($ct = $o['Header']['Content-Type']));
             if ((($ia = is_array($d)) && !$hct) || ($ia && starts_with($ct, 'application/x-www-form-urlencoded'))) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($d));
+                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($d))) return false;
             } elseif ($ia && $hct && starts_with($ct, 'multipart/form-data')) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $d);
+                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, $d)) return false;
             } elseif ($hct && starts_with($ct, 'application/json')) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d));
+                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d))) return false;
             } elseif (is_string($d)) {
                 if (!$hct) $o['Header']['Content-Type'] = 'text/plain';
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $d);
+                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, $d)) return false;
             }
         }
         if (!empty($o['Header']) && is_array($hs = $o['Header'])) {
             $t = [];
             foreach ($hs as $k => $h) $t[] = $k.': '.$h;
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $t);
+            if (!curl_setopt($ch, CURLOPT_HTTPHEADER, $t)) return false;
         }
         if (!empty($o['User-Agent']) && is_string($ua = $o['User-Agent'])) {
-            curl_setopt($ch, CURLOPT_USERAGENT, $ua);
+            if (!curl_setopt($ch, CURLOPT_USERAGENT, $ua)) return false;
         }
         if (!empty($o['Cookie']) && is_string($c = $o['Cookie'])) {
-            curl_setopt($ch, CURLOPT_COOKIE, $c);
+            if (!curl_setopt($ch, CURLOPT_COOKIE, $c)) return false;
         } elseif (defined('COOKIE_DIR')) {
             $c = rtrim(COOKIE_DIR, '/\\').DS.($o['Cookie-File'] ?? 'cookie').'.tmp';
-            curl_setopt($ch, CURLOPT_COOKIEJAR, $c);
-            curl_setopt($ch, CURLOPT_COOKIEFILE, $c);
+            if (!curl_setopt($ch, CURLOPT_COOKIEJAR, $c)) return false;
+            if (!curl_setopt($ch, CURLOPT_COOKIEFILE, $c)) return false;
         }
         if (!empty($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s);
+            if (!curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s)) return false;
         }
         if (!empty($o["Proxy"]) && is_string($p = $o["Proxy"])) {
-            curl_setopt($ch, CURLOPT_PROXY, $p);
+            if (!curl_setopt($ch, CURLOPT_PROXY, $p)) return false;
         }
         if (!empty($o["HTTP-Version"]) && is_int($v = $o["HTTP-Version"])) {
-            curl_setopt($ch, CURLOPT_HTTP_VERSION, $v);
+            if (!curl_setopt($ch, CURLOPT_HTTP_VERSION, $v)) return false;
         }
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        if (!curl_setopt($ch, CURLOPT_RETURNTRANSFER, true)) return false;
         return $ch;
     }
 
     /**
-     * 執行多個非同步請求
+     * 執行一個或多個非同步請求
      * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
@@ -725,6 +726,7 @@ abstract class Model extends AutoLoader {
      * @return array
      */
     private static function phc($r) {
+        if (empty($r)) return ['header' => [], 'content' => ''];
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
         $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
         $hr = ['Status' => intval(explode(' ', array_shift($fs))[1] ?? 0)];
