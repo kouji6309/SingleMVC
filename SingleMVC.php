@@ -599,9 +599,8 @@ abstract class Model extends AutoLoader {
      * @return mixed
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
-        $chs = [self::request_async($url, $method, $data, $option)];
-        $chs = self::request_run($chs, 0, -1, $get_header);
-        return reset($chs);
+        $chs = self::request_async($url, $method, $data, $option);
+        return self::request_run($chs, 0, -1, $get_header);
     }
 
     /**
@@ -671,21 +670,26 @@ abstract class Model extends AutoLoader {
 
     /**
      * 執行多個非同步請求
-     * @param array $rs 請求物件
+     * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return array
+     * @return mixed
      */
-    protected static function request_run(&$rs = [], $start = 0, $length = -1, $get_header = false) {
-        $n = 'request';
+    protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
+        $n = 'request'; $one = false;
+        if (gettype($rs) == 'resource' && get_resource_type($rs) == 'curl') {
+            $rs = [$rs]; $start = 0; $length = -1; $one = true;
+        } elseif (gettype($rs) != 'array') {
+            return false;
+        }
         if (($s = $start) < 0 || $s > count($rs)) $s = 0;
         if (($l = $length) < 0 || ($s + $l) > count($rs)) $l = count($rs) - $s;
         $e = $s + $l;
         $cb = false;
-        if (gettype($rs[$s][$n]) == 'resource') {
+        if (gettype($rs[$s][$n]) == 'resource' && get_resource_type($rs[$s][$n]) == 'curl') {
             $cb = true;
-        } elseif (gettype($rs[$s]) != 'resource') {
+        } elseif (gettype($rs[$s]) != 'resource' || get_resource_type($rs[$s]) != 'curl') {
             return [];
         }
         $mh = curl_multi_init();
@@ -712,7 +716,7 @@ abstract class Model extends AutoLoader {
                 curl_close($rs[$i]);
             }
         }
-        return $r;
+        return $one ? $r[0] : $r;
     }
 
     /**
@@ -723,7 +727,7 @@ abstract class Model extends AutoLoader {
     private static function phc($r) {
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
         $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
-        $hr = ['Status' => intval(explode(' ', array_shift($fs))[1]??0)];
+        $hr = ['Status' => intval(explode(' ', array_shift($fs))[1] ?? 0)];
         foreach ($fs as $f) {
             if (preg_match('/([^:]+): (.+)/m', $f, $m) ) {
                 $m[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) { return strtoupper($r[0]); }, strtolower(trim($m[1])));

@@ -231,13 +231,13 @@ abstract class Model extends AutoLoader {
 
     /**
      * 執行多個非同步請求
-     * @param array $rs 請求物件
+     * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return array
+     * @return mixed
      */
-    protected static function request_run(&$rs = [], $start = 0, $length = -1, $get_header = false) { return []; }
+    protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
 }
 
 /**
