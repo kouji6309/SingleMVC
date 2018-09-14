@@ -92,6 +92,7 @@ class SingleMVC {
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
         if (!empty(self::$config->routes) && ($r = self::$config->routes) && is_array($r)) {
             foreach ($r as $k => $v) {
+                $k = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $k);
                 if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
                     $u = preg_replace($k, $v, $u); break;
                 }
