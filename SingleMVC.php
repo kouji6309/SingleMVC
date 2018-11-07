@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.9.13');
+define('VERSION', '1.11.7');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -274,6 +274,7 @@ class SingleMVC {
      * @return null|string
      */
     public static function output($view, $data = [], $flag = false) {
+        global $_DEBUG, $_TIME;
         if ($flag === true) ob_start();
         if (is_int($flag)) http_response_code($flag);
         lang(); $d = $data; $v = trim(str_replace(['\\', '/'], DS, $ov = $view), DS);
