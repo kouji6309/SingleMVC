@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.11.7');
+define('VERSION', '1.12.6');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -466,7 +466,7 @@ abstract class Model extends AutoLoader {
     /**
      * 執行 SQL 指令
      * @param string $statement SQL 指令
-     * @return PDOStatement
+     * @return PDOStatement|bool
      */
     protected function db_query($statement) {
         if ($this->db_connect()) return $this->db_statement = self::$db_pdo->query($statement);
@@ -476,7 +476,7 @@ abstract class Model extends AutoLoader {
     /**
      * 準備 SQL 指令
      * @param string $statement SQL 樣板
-     * @return PDOStatement
+     * @return PDOStatement|bool
      */
     protected function db_prepare($statement) {
         if ($this->db_connect()) return $this->db_statement = self::$db_pdo->prepare($statement);
@@ -485,17 +485,25 @@ abstract class Model extends AutoLoader {
 
     /**
      * 插入資料
-     * @return string 最後新增的編號
+     * @return string|int|bool 最後新增的編號 或 新增列數
      */
     protected function db_insert() {
-        if (($s = $this->db_statement) && $s->execute()) return self::$db_pdo->lastInsertId();
+        if (($s = $this->db_statement) && $s->execute()) {
+            $c = $s->rowCount();
+            $l = self::$db_pdo->lastInsertId();
+            if ($c == 1) {
+                return $l ?: $c;
+            } elseif ($c > 1) {
+                return $c;
+            }
+        }
         return false;
     }
 
     /**
      * 取得資料
      * @param boolean $force_array 單筆資料仍傳回二維陣列
-     * @return array
+     * @return array|bool
      */
     protected function db_select($force_array = false) {
         if (($s = $this->db_statement) && $s->execute()) {
@@ -506,7 +514,7 @@ abstract class Model extends AutoLoader {
 
     /**
      * 更新資料
-     * @return int 異動的列數
+     * @return int|bool 異動的列數
      */
     protected function db_update() {
         if (($s = $this->db_statement) && $s->execute()) return $s->rowCount();
@@ -598,7 +606,7 @@ abstract class Model extends AutoLoader {
      * @param mixed $data 資料
      * @param array $option 選項
      * @param boolean $get_header 是否傳回 Header
-     * @return mixed
+     * @return array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
         $chs = self::request_async($url, $method, $data, $option);
@@ -611,7 +619,7 @@ abstract class Model extends AutoLoader {
      * @param string $method 請求方法
      * @param mixed $data 資料
      * @param array $option 選項
-     * @return resource
+     * @return resource|bool
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) {
         $ch = curl_init();
@@ -677,7 +685,7 @@ abstract class Model extends AutoLoader {
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return mixed
+     * @return array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
         $n = 'request'; $one = false;

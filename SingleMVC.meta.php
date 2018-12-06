@@ -3,7 +3,7 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.11.7');
+define('VERSION', '1.12.6');
 class SingleMVC {
     /**
      * 取得或設定程式組態
@@ -33,7 +33,7 @@ class SingleMVC {
      * @param string $file 檔案路徑
      * @return string|boolean
      */
-    public static function require($file) { }
+    public static function require($file) { return ""; }
 
     /**
      * 檢查檔案是否可以載入
@@ -140,40 +140,40 @@ abstract class Model extends AutoLoader {
      * 連線 SQL 資料庫
      * @return boolean
      */
-    protected function db_connect() { }
+    protected function db_connect() { return true; }
 
     /**
      * 執行 SQL 指令
      * @param string $statement SQL 指令
-     * @return PDOStatement
+     * @return PDOStatement|bool
      */
-    protected function db_query($statement) { }
+    protected function db_query($statement) {return null;  }
 
     /**
      * 準備 SQL 指令
      * @param string $statement SQL 樣板
-     * @return PDOStatement
+     * @return PDOStatement|bool
      */
-    protected function db_prepare($statement) { }
+    protected function db_prepare($statement) { return null; }
 
     /**
      * 插入資料
-     * @return string 最後新增的編號
+     * @return string|int|bool 最後新增的編號 或 新增列數
      */
     protected function db_insert() { return ""; }
 
     /**
      * 取得資料
      * @param boolean $force_array 單筆資料仍傳回二維陣列
-     * @return array
+     * @return array|bool
      */
     protected function db_select($force_array = false) { return []; }
 
     /**
      * 更新資料
-     * @return int 異動的列數
+     * @return int|bool 異動的列數
      */
-    protected function db_update() { }
+    protected function db_update() { return 0; }
 
     /**
      * 綁定數值
@@ -215,7 +215,7 @@ abstract class Model extends AutoLoader {
      * @param mixed $data 資料
      * @param array $option 選項
      * @param boolean $get_header 是否傳回 Header
-     * @return mixed
+     * @return array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ""; }
 
@@ -225,7 +225,7 @@ abstract class Model extends AutoLoader {
      * @param string $method 請求方法
      * @param mixed $data 資料
      * @param array $option 選項
-     * @return resource
+     * @return resource|bool
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) { return null; }
 
@@ -235,7 +235,7 @@ abstract class Model extends AutoLoader {
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return mixed
+     * @return array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
 }
