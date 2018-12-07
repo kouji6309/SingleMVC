@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.12.6');
+define('VERSION', '1.12.7');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -40,6 +40,7 @@ class SingleMVC {
     private static $pd = [];
     private static $is_run = false;
     private static $ld = '';
+    private static $am = ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'];
 
     /**
      * 產生 SingleMVC 實例並執行
@@ -195,10 +196,11 @@ class SingleMVC {
      * @return array|boolean
      */
     private static function ccm($c, $m) {
-        $f = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-        if ($f($c, $rm = ($m.'_'.self::$hm))) {
+        $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
+        $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
+        if ($f1($c, $rm = ($m.'_'.self::$hm))) {
             return [$c, $rm];
-        } elseif (self::$hm == 'get' && $f($c, $m)) {
+        } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
             return [$c, $m];
         }
         return false;
@@ -255,7 +257,7 @@ class SingleMVC {
             $d = self::$ud;
         } elseif ($t == 'file') {
             $d = self::$fd;
-        } elseif ($t == self::$hm && in_array($t, ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'])) {
+        } elseif ($t == self::$hm && in_array($t, self::$am)) {
             $d = self::$cd;
         }
         if (is_array($k) && is_array($d)) {
