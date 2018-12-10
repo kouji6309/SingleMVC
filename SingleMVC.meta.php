@@ -3,11 +3,11 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.12.7');
+define('VERSION', '1.12.10');
 class SingleMVC {
     /**
      * 取得或設定程式組態
-     * @var Config
+     * @var FrameworkConfig
      */
     public static $config = null;
 
@@ -75,7 +75,7 @@ class SingleMVC {
     public static function lang_load($lang = '', &$now = null) { return true; }
 }
 
-class Config {
+class FrameworkConfig {
     /**
      * 取得或設定 路由
      * @var array
@@ -96,19 +96,14 @@ class Config {
 }
 
 /**
- * 實作自動載入
- */
-abstract class AutoLoader { }
-
-/**
  * Controller 基底類別
  */
-abstract class Controller extends AutoLoader { }
+abstract class Controller { }
 
 /**
  * Model 基底類別
  */
-abstract class Model extends AutoLoader {
+abstract class Model {
     /**
      * 建立密碼的雜湊值
      * @param string $password 輸入密碼
@@ -215,7 +210,7 @@ abstract class Model extends AutoLoader {
      * @param mixed $data 資料
      * @param array $option 選項
      * @param boolean $get_header 是否傳回 Header
-     * @return array|bool
+     * @return string|array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ""; }
 
@@ -235,7 +230,7 @@ abstract class Model extends AutoLoader {
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return array|bool
+     * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
 }

@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.12.7');
+define('VERSION', '1.12.10');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -17,7 +17,7 @@ define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
 class SingleMVC {
     /**
      * 取得或設定程式組態
-     * @var Config
+     * @var FrameworkConfig
      */
     public static $config = null;
 
@@ -33,12 +33,12 @@ class SingleMVC {
      */
     public static $view = [];
 
+    private static $is_run = false;
     private static $hm = 'get';
     private static $ud = [];
     private static $cd = [];
     private static $fd = [];
     private static $pd = [];
-    private static $is_run = false;
     private static $ld = '';
     private static $am = ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'];
 
@@ -46,13 +46,12 @@ class SingleMVC {
      * 產生 SingleMVC 實例並執行
      */
     public function __construct() {
-        SingleMVC::run();
+        self::run();
     }
 
     private static function run() {
         if (self::$is_run) return;
         self::$is_run = true;
-        session_start(['read_and_close' => true]);
         // 載入第三方套件
         foreach (['3rd', 'helper'] as $f) {
             if (is_dir($h = SOURCE_DIR.DS.$f)) {
@@ -60,8 +59,30 @@ class SingleMVC {
                 foreach ($hs as $i) self::require($h.DS.$i);
             }
         }
+        // 自動載入 與 Composer
+        spl_autoload_register(function ($c) {
+            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
+                $sd = ''; $sd = function ($p) use (&$sd) {
+                    if (file_exists($p) && is_dir($p)) {
+                        $r = ['d' => [], 'f' => []];
+                        $l = array_diff(scandir($p), ['.', '..']);
+                        foreach ($l as $i) {
+                            $i = $p.DS.$i; if (is_dir($i)) { $r['d'][] = $i; continue; } if (is_file($i)) { $r['f'][] = $i; continue; }
+                        }
+                        sort($r['d']); sort($r['f']);
+                        foreach ($r['d'] as $i) $r['f'] = array_merge($r['f'], $sd($i)['f']);
+                        return $r;
+                    }
+                    return false;
+                };
+                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, DS.$c.'.php') && self::require($i)) return;
+            }
+        });
+        self::require(ROOT.DS.'vendor'.DS.'autoload.php');
         // 載入設定
         self::require(SOURCE_DIR.DS.'config.php');
+        session_start(self::$config->session);
         // 處理路由
         $_S = $_SERVER;
         $u = parse_url('http://host'.(function ($s) {
@@ -359,7 +380,13 @@ class SingleMVC {
     }
 }
 
-class Config {
+class FrameworkConfig {
+    /**
+     * 取得或設定 會話設定
+     * @var array
+     */
+    public $session = [];
+
     /**
      * 取得或設定 路由
      * @var array
@@ -380,41 +407,14 @@ class Config {
 }
 
 /**
- * 實作自動載入
- */
-abstract class AutoLoader {
-    public function __construct() {
-        spl_autoload_register(function ($c) {
-            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
-            if (!SingleMVC::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
-                $sd = function ($p) use (&$sd) {
-                    if (file_exists($p) && is_dir($p)) {
-                        $r = ['d' => [], 'f' => []];
-                        $l = array_diff(scandir($p), ['.', '..']);
-                        foreach ($l as $i) {
-                            $i = $p.DS.$i; if (is_dir($i)) { $r['d'][] = $i; continue; } if (is_file($i)) { $r['f'][] = $i; continue; }
-                        }
-                        sort($r['d']); sort($r['f']);
-                        foreach ($r['d'] as $i) $r['f'] = array_merge($r['f'], $sd($i)['f']);
-                        return $r;
-                    }
-                    return false;
-                };
-                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, DS.$c.'.php') && SingleMVC::require($i)) return;
-            }
-        });
-    }
-}
-
-/**
  * Controller 基底類別
  */
-abstract class Controller extends AutoLoader { }
+abstract class Controller { }
 
 /**
  * Model 基底類別
  */
-abstract class Model extends AutoLoader {
+abstract class Model {
     /**
      * 建立密碼的雜湊值
      * @param string $password 輸入密碼
@@ -608,7 +608,7 @@ abstract class Model extends AutoLoader {
      * @param mixed $data 資料
      * @param array $option 選項
      * @param boolean $get_header 是否傳回 Header
-     * @return array|bool
+     * @return string|array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
         $chs = self::request_async($url, $method, $data, $option);
@@ -687,7 +687,7 @@ abstract class Model extends AutoLoader {
      * @param int $start 開始索引
      * @param int $length 長度
      * @param boolean $get_header 是否傳回 Header
-     * @return array|bool
+     * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
         $n = 'request'; $one = false;
@@ -960,6 +960,6 @@ function jwt_decode($token, $secret) {
 	return false;
 }
 
-SingleMVC::$config = new Config();
+SingleMVC::$config = new FrameworkConfig();
 if (!defined('PAUSE')) register_shutdown_function(function () { new SingleMVC(); exit(); });
 #endregion
