@@ -409,12 +409,16 @@ class FrameworkConfig {
 /**
  * Controller 基底類別
  */
-abstract class Controller { }
+abstract class Controller {
+    public function __construct() { }
+}
 
 /**
  * Model 基底類別
  */
 abstract class Model {
+    public function __construct() { }
+
     /**
      * 建立密碼的雜湊值
      * @param string $password 輸入密碼
