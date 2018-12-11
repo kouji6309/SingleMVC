@@ -60,10 +60,10 @@ class SingleMVC {
             }
         }
         // 自動載入 與 Composer
-		spl_autoload_register(function ($c) {
-			$fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+        spl_autoload_register(function ($c) {
+            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
             if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
-				if (self::$fs == null) {
+                if (self::$fs == null) {
                     self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
                         if (file_exists($p) && is_dir($p)) {
                             $d = []; $l = array_diff(scandir($p), ['.', '..']);
@@ -74,8 +74,8 @@ class SingleMVC {
                     };
                     foreach ($fs as $f) $f1($f);
                 }
-				foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
-			}
+                foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
+            }
         });
         self::require(ROOT.DS.'vendor'.DS.'autoload.php');
         // 載入設定
@@ -105,8 +105,8 @@ class SingleMVC {
         }
         if (trim($u, '/') === '') {
             if (count($t = preg_split('/[?&]/', $q, 2)) == 2) {
-				list($u, $q) = $t;
-			}
+                list($u, $q) = $t;
+            }
         }
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
@@ -216,7 +216,7 @@ class SingleMVC {
      */
     private static function ccm($c, $m) {
         $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-        $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
+    $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
         if ($f1($c, $rm = ($m.'_'.self::$hm))) {
             return [$c, $rm];
         } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
@@ -948,18 +948,18 @@ function jwt_encode($data, $secret) {
  * @return mixed
  */
 function jwt_decode($token, $secret) {
-	if (!is_string($token) || !is_string($secret)) return false;
-	$t = explode('.', $token);
-	if (count($t) != 3) return false;
-	list($h, $p, $s) = $t;
-	$hd = json_decode(base64_decode($h), true);
-	if (!$hd) return false;
-	$sd = base64_decode($s);
-	$sc = hash_hmac('sha'.substr($hd['alg'] ?? 'HS256', 2, 3), $h.'.'.$p, $secret, true);
-	if ($sd === $sc) {
-		return json_decode(base64_decode($p), true);
-	}
-	return false;
+    if (!is_string($token) || !is_string($secret)) return false;
+    $t = explode('.', $token);
+    if (count($t) != 3) return false;
+    list($h, $p, $s) = $t;
+    $hd = json_decode(base64_decode($h), true);
+    if (!$hd) return false;
+    $sd = base64_decode($s);
+    $sc = hash_hmac('sha'.substr($hd['alg'] ?? 'HS256', 2, 3), $h.'.'.$p, $secret, true);
+    if ($sd === $sc) {
+        return json_decode(base64_decode($p), true);
+    }
+    return false;
 }
 
 SingleMVC::$config = new FrameworkConfig();
