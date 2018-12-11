@@ -8,7 +8,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.12.10');
+define('VERSION', '1.12.11');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -33,7 +33,8 @@ class SingleMVC {
      */
     public static $view = [];
 
-    private static $is_run = false;
+    private static $is_run = 0;
+    private static $fs = null;
     private static $hm = 'get';
     private static $ud = [];
     private static $cd = [];
@@ -50,8 +51,7 @@ class SingleMVC {
     }
 
     private static function run() {
-        if (self::$is_run) return;
-        self::$is_run = true;
+        if (self::$is_run++) return;
         // 載入第三方套件
         foreach (['3rd', 'helper'] as $f) {
             if (is_dir($h = SOURCE_DIR.DS.$f)) {
@@ -60,24 +60,22 @@ class SingleMVC {
             }
         }
         // 自動載入 與 Composer
-        spl_autoload_register(function ($c) {
-            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+		spl_autoload_register(function ($c) {
+			$fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
             if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
-                $sd = ''; $sd = function ($p) use (&$sd) {
-                    if (file_exists($p) && is_dir($p)) {
-                        $r = ['d' => [], 'f' => []];
-                        $l = array_diff(scandir($p), ['.', '..']);
-                        foreach ($l as $i) {
-                            $i = $p.DS.$i; if (is_dir($i)) { $r['d'][] = $i; continue; } if (is_file($i)) { $r['f'][] = $i; continue; }
+				if (self::$fs == null) {
+                    self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
+                        if (file_exists($p) && is_dir($p)) {
+                            $d = []; $l = array_diff(scandir($p), ['.', '..']);
+                            foreach ($l as $i) { if (is_dir($i = $p.DS.$i)) { $d[] = $i; } else if (is_file($i)) { self::$fs[] = $i; } }
+                            sort($d);
+                            foreach ($d as $i) $f1($i);
                         }
-                        sort($r['d']); sort($r['f']);
-                        foreach ($r['d'] as $i) $r['f'] = array_merge($r['f'], $sd($i)['f']);
-                        return $r;
-                    }
-                    return false;
-                };
-                foreach ($fs as $f) if ($ls = $sd($f)) foreach ($ls['f'] as $i) if (ends_with($i, DS.$c.'.php') && self::require($i)) return;
-            }
+                    };
+                    foreach ($fs as $f) $f1($f);
+                }
+				foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
+			}
         });
         self::require(ROOT.DS.'vendor'.DS.'autoload.php');
         // 載入設定
