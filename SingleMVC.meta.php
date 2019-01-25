@@ -6,70 +6,70 @@ define('SOURCE_DIR', '');
 define('VERSION', '1.12.11');
 class SingleMVC {
     /**
-     * ¨ú±o©Î³]©wµ{¦¡²ÕºA
+     * å–å¾—æˆ–è¨­å®šç¨‹å¼çµ„æ…‹
      * @var FrameworkConfig
      */
     public static $config = null;
 
     /**
-     * ¨ú±o©Î³]©w»y¨t¸ê®Æ
+     * å–å¾—æˆ–è¨­å®šèªç³»è³‡æ–™
      * @var array
      */
     public static $lang = [];
 
     /**
-     * ¨ú±o©Î³]©w View ¤º®e(³æ­¶¥Î)
+     * å–å¾—æˆ–è¨­å®š View å…§å®¹(å–®é ç”¨)
      * @var array
      */
     public static $view = [];
 
     /**
-     * ²£¥Í SingleMVC ¹ê¨Ò¨Ã°õ¦æ
+     * ç”¢ç”Ÿ SingleMVC å¯¦ä¾‹ä¸¦åŸ·è¡Œ
      */
     public function __construct() { }
 
     /**
-     * ¸ü¤JÀÉ®×
-     * @param string $file ÀÉ®×¸ô®|
+     * è¼‰å…¥æª”æ¡ˆ
+     * @param string $file æª”æ¡ˆè·¯å¾‘
      * @return string|boolean
      */
     public static function require($file) { return ""; }
 
     /**
-     * ÀË¬dÀÉ®×¬O§_¥i¥H¸ü¤J
-     * @param string $file ÀÉ®×¸ô®|
+     * æª¢æŸ¥æª”æ¡ˆæ˜¯å¦å¯ä»¥è¼‰å…¥
+     * @param string $file æª”æ¡ˆè·¯å¾‘
      * @return string|boolean
      */
     public static function require_check($file) { return ''; }
 
     /**
-     * ¨ú±o¿é¤Jªº¸ê®Æ
-     * @param mixed $key ¯Á¤Ş¦WºÙ
-     * @param string $type ¸ê®ÆÁ`Ãş
+     * å–å¾—è¼¸å…¥çš„è³‡æ–™
+     * @param mixed $key ç´¢å¼•åç¨±
+     * @param string $type è³‡æ–™ç¸½é¡
      * @return mixed
      */
     public static function input($key = null, $type = null) { return ""; }
 
     /**
-     * ¿é¥X View
-     * @param string $view View ¦WºÙ
-     * @param mixed $data ¸ê®Æ
-     * @param mixed $flag ªş¥[¿ï¶µ
+     * è¼¸å‡º View
+     * @param string $view View åç¨±
+     * @param mixed $data è³‡æ–™
+     * @param mixed $flag é™„åŠ é¸é …
      * @return null|string
      */
     public static function output($view, $data = [], $flag = false) { return ""; }
 
     /**
-     * ¨ú±o»y¨t¤º®e
-     * @param string|array $key ¯Á¤Ş
+     * å–å¾—èªç³»å…§å®¹
+     * @param string|array $key ç´¢å¼•
      * @return string|array
      */
     public static function lang($key = '') { return ""; }
 
     /**
-     * Åª¨ú»y¨t
-     * @param string $lang »y¨t¦WºÙ
-     * @param string $now ¥Ø«eªº»y¨t¦WºÙ
+     * è®€å–èªç³»
+     * @param string $lang èªç³»åç¨±
+     * @param string $now ç›®å‰çš„èªç³»åç¨±
      * @return boolean
      */
     public static function lang_load($lang = '', &$now = null) { return true; }
@@ -77,250 +77,250 @@ class SingleMVC {
 
 class FrameworkConfig {
     /**
-     * ¨ú±o©Î³]©w ¸ô¥Ñ
+     * å–å¾—æˆ–è¨­å®š è·¯ç”±
      * @var array
      */
     public $routes = [];
 
     /**
-     * ¨ú±o©Î³]©w ¸ê®Æ®w³]©w
+     * å–å¾—æˆ–è¨­å®š è³‡æ–™åº«è¨­å®š
      * @var array
      */
     public $db = [];
 
     /**
-     * ¨ú±o©Î³]©w ¹w³]»y¨¥
+     * å–å¾—æˆ–è¨­å®š é è¨­èªè¨€
      * @var string
      */
     public $lang = null;
 }
 
 /**
- * Controller °ò©³Ãş§O
+ * Controller åŸºåº•é¡åˆ¥
  */
 abstract class Controller { }
 
 /**
- * Model °ò©³Ãş§O
+ * Model åŸºåº•é¡åˆ¥
  */
 abstract class Model {
     /**
-     * «Ø¥ß±K½XªºÂø´ê­È
-     * @param string $password ¿é¤J±K½X
+     * å»ºç«‹å¯†ç¢¼çš„é›œæ¹Šå€¼
+     * @param string $password è¼¸å…¥å¯†ç¢¼
      * @return string
      */
     protected static function password_hash($password) { return ""; }
 
     /**
-     * ÅçÃÒ±K½X»PÂø´ê­È
-     * @param string $password ¿é¤J±K½X
-     * @param string $hash ¤w¥[±Kªº±K½X
+     * é©—è­‰å¯†ç¢¼èˆ‡é›œæ¹Šå€¼
+     * @param string $password è¼¸å…¥å¯†ç¢¼
+     * @param string $hash å·²åŠ å¯†çš„å¯†ç¢¼
      * @return boolean
      */
     protected static function password_verify($password, $hash) { return true; }
 
     /**
-     * ¨ú±o©Î³]©w PDO ª«¥ó
+     * å–å¾—æˆ–è¨­å®š PDO ç‰©ä»¶
      * @var PDO
      */
     protected static $db_pdo = null;
 
     /**
-     * ¨ú±o©Î³]©w ³Ì«áªº PDO ±Ô­z
+     * å–å¾—æˆ–è¨­å®š æœ€å¾Œçš„ PDO æ•˜è¿°
      * @var PDOStatement
      */
     protected $db_statement = null;
 
     /**
-     * ³s½u SQL ¸ê®Æ®w
+     * é€£ç·š SQL è³‡æ–™åº«
      * @return boolean
      */
     protected function db_connect() { return true; }
 
     /**
-     * °õ¦æ SQL «ü¥O
-     * @param string $statement SQL «ü¥O
+     * åŸ·è¡Œ SQL æŒ‡ä»¤
+     * @param string $statement SQL æŒ‡ä»¤
      * @return PDOStatement|bool
      */
     protected function db_query($statement) {return null;  }
 
     /**
-     * ·Ç³Æ SQL «ü¥O
-     * @param string $statement SQL ¼ËªO
+     * æº–å‚™ SQL æŒ‡ä»¤
+     * @param string $statement SQL æ¨£æ¿
      * @return PDOStatement|bool
      */
     protected function db_prepare($statement) { return null; }
 
     /**
-     * ´¡¤J¸ê®Æ
-     * @return string|int|bool ³Ì«á·s¼Wªº½s¸¹ ©Î ·s¼W¦C¼Æ
+     * æ’å…¥è³‡æ–™
+     * @return string|int|bool æœ€å¾Œæ–°å¢çš„ç·¨è™Ÿ æˆ– æ–°å¢åˆ—æ•¸
      */
     protected function db_insert() { return ""; }
 
     /**
-     * ¨ú±o¸ê®Æ
-     * @param boolean $force_array ³æµ§¸ê®Æ¤´¶Ç¦^¤Gºû°}¦C
+     * å–å¾—è³‡æ–™
+     * @param boolean $force_array å–®ç­†è³‡æ–™ä»å‚³å›äºŒç¶­é™£åˆ—
      * @return array|bool
      */
     protected function db_select($force_array = false) { return []; }
 
     /**
-     * §ó·s¸ê®Æ
-     * @return int|bool ²§°Êªº¦C¼Æ
+     * æ›´æ–°è³‡æ–™
+     * @return int|bool ç•°å‹•çš„åˆ—æ•¸
      */
     protected function db_update() { return 0; }
 
     /**
-     * ¸j©w¼Æ­È
-     * @param int|string|array $parameter ¦WºÙ/°Ñ¼Æ
-     * @param mixed $value ¼Æ­È
-     * @param int $type «¬§O
+     * ç¶å®šæ•¸å€¼
+     * @param int|string|array $parameter åç¨±/åƒæ•¸
+     * @param mixed $value æ•¸å€¼
+     * @param int $type å‹åˆ¥
      * @return boolean
      */
     protected function db_bind($parameter, $value = '', $type = PDO::PARAM_STR) { return true; }
 
     /**
-     * ¶}©l¥æ©ö
+     * é–‹å§‹äº¤æ˜“
      * @return boolean
      */
     protected function db_begin() { return true; }
 
     /**
-     * ´£¥æ¥æ©ö
+     * æäº¤äº¤æ˜“
      * @return boolean
      */
     protected function db_commit() { return true; }
 
     /**
-     * ´_­ì¥æ©ö
+     * å¾©åŸäº¤æ˜“
      * @return boolean
      */
     protected function db_rollBack() { return true; }
 
     /**
-     * ¨ú±o°£¿ù¸ê°T
+     * å–å¾—é™¤éŒ¯è³‡è¨Š
      * @return boolean|string
      */
     protected function db_debug() { return true; }
 
     /**
-     * «Ø¥ß¨Ã°õ¦æ¤@­Ó½Ğ¨D
-     * @param string $url ½Ğ¨D¸ô®|
-     * @param string $method ½Ğ¨D¤èªk
-     * @param mixed $data ¸ê®Æ
-     * @param array $option ¿ï¶µ
-     * @param boolean $get_header ¬O§_¶Ç¦^ Header
+     * å»ºç«‹ä¸¦åŸ·è¡Œä¸€å€‹è«‹æ±‚
+     * @param string $url è«‹æ±‚è·¯å¾‘
+     * @param string $method è«‹æ±‚æ–¹æ³•
+     * @param mixed $data è³‡æ–™
+     * @param array $option é¸é …
+     * @param boolean $get_header æ˜¯å¦å‚³å› Header
      * @return string|array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ""; }
 
     /**
-     * «Ø¥ß¤@­Ó«D¦P¨B½Ğ¨D
-     * @param string $url ½Ğ¨D¸ô®|
-     * @param string $method ½Ğ¨D¤èªk
-     * @param mixed $data ¸ê®Æ
-     * @param array $option ¿ï¶µ
+     * å»ºç«‹ä¸€å€‹éåŒæ­¥è«‹æ±‚
+     * @param string $url è«‹æ±‚è·¯å¾‘
+     * @param string $method è«‹æ±‚æ–¹æ³•
+     * @param mixed $data è³‡æ–™
+     * @param array $option é¸é …
      * @return resource|bool
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) { return null; }
 
     /**
-     * °õ¦æ¤@­Ó©Î¦h­Ó«D¦P¨B½Ğ¨D
-     * @param mixed $rs ½Ğ¨Dª«¥ó
-     * @param int $start ¶}©l¯Á¤Ş
-     * @param int $length ªø«×
-     * @param boolean $get_header ¬O§_¶Ç¦^ Header
+     * åŸ·è¡Œä¸€å€‹æˆ–å¤šå€‹éåŒæ­¥è«‹æ±‚
+     * @param mixed $rs è«‹æ±‚ç‰©ä»¶
+     * @param int $start é–‹å§‹ç´¢å¼•
+     * @param int $length é•·åº¦
+     * @param boolean $get_header æ˜¯å¦å‚³å› Header
      * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
 }
 
 /**
- * ³]©wª¬ºA 404
+ * è¨­å®šç‹€æ…‹ 404
  */
 function header_404() { }
 
 /**
- * ¨ú±o¿é¤Jªº¸ê®Æ
- * @param mixed $key ¯Á¤Ş¦WºÙ
- * @param string $type ¸ê®ÆÁ`Ãş
+ * å–å¾—è¼¸å…¥çš„è³‡æ–™
+ * @param mixed $key ç´¢å¼•åç¨±
+ * @param string $type è³‡æ–™ç¸½é¡
  * @return mixed
  */
 function input($key = null, $type = null) { return ""; }
 
 /**
- * ¿é¥X View
- * @param string $view View ¦WºÙ
- * @param mixed $data ¸ê®Æ
- * @param mixed $flag ªş¥[¿ï¶µ
+ * è¼¸å‡º View
+ * @param string $view View åç¨±
+ * @param mixed $data è³‡æ–™
+ * @param mixed $flag é™„åŠ é¸é …
  * @return null|string
  */
 function output($view, $data = [], $flag = false) { return ""; }
 
 /**
- * ¨ú±o»y¨t¤º®e
- * @param string|array $key ¯Á¤Ş
+ * å–å¾—èªç³»å…§å®¹
+ * @param string|array $key ç´¢å¼•
  * @return string|array
  */
 function lang($key = '') { return ""; }
 
 /**
- * Åª¨ú»y¨t
- * @param string $lang »y¨t¦WºÙ
- * @param string $now ¥Ø«eªº»y¨t¦WºÙ
+ * è®€å–èªç³»
+ * @param string $lang èªç³»åç¨±
+ * @param string $now ç›®å‰çš„èªç³»åç¨±
  * @return boolean
  */
 function lang_load($lang = '', &$now = null) { return true; }
 
 /**
- * ÀË¬d¦r¦ê¬O§_¥H¯S©w¦r¦ê¶}ÀY
- * @param string $haystack ¦r¦ê
- * @param string $needle ¯S©w¦r¦ê
+ * æª¢æŸ¥å­—ä¸²æ˜¯å¦ä»¥ç‰¹å®šå­—ä¸²é–‹é ­
+ * @param string $haystack å­—ä¸²
+ * @param string $needle ç‰¹å®šå­—ä¸²
  * @return boolean
  */
 function starts_with($haystack, $needle) { return true; }
 
 /**
- * ÀË¬d¦r¦ê¬O§_¥H¯S©w¦r¦êµ²§À
- * @param string $haystack ¦r¦ê
- * @param string $needle ¯S©w¦r¦ê
+ * æª¢æŸ¥å­—ä¸²æ˜¯å¦ä»¥ç‰¹å®šå­—ä¸²çµå°¾
+ * @param string $haystack å­—ä¸²
+ * @param string $needle ç‰¹å®šå­—ä¸²
  * @return boolean
  */
 function ends_with($haystack, $needle) { return true; }
 
 /**
- * °£¿ù¸ê°T
+ * é™¤éŒ¯è³‡è¨Š
  */
 $_DEBUG = [];
 
 /**
- * °O¿ı°£¿ù¸ê°T
- * @param mixed $msg °T®§
+ * è¨˜éŒ„é™¤éŒ¯è³‡è¨Š
+ * @param mixed $msg è¨Šæ¯
  * @return string
  */
 function debug($msg = '') { return ""; }
 
 /**
- * ¶É¦L¸ê®Æ
- * @param mixed $data ¸ê®Æ¤º®e
- * @param mixed $vars §ó¦h¸ê®Æ¤º®e
+ * å‚¾å°è³‡æ–™
+ * @param mixed $data è³‡æ–™å…§å®¹
+ * @param mixed $vars æ›´å¤šè³‡æ–™å…§å®¹
  */
 function dump($data, ...$vars) { }
 
 /**
- * ®É¶¡¬ö¿ı
+ * æ™‚é–“ç´€éŒ„
  */
 $_TIME = ['total' => [], 'block' => []];
 
 /**
- * ¬ö¿ı°õ¦æ®É¶¡
- * @param string $tag µù°O
+ * ç´€éŒ„åŸ·è¡Œæ™‚é–“
+ * @param string $tag è¨»è¨˜
  */
 function stopwatch($tag = '') { }
 
 /**
- * ¨Ì®æ¦¡¿é¥X®É¶¡
- * @param array $format ¿é¥X®æ¦¡
+ * ä¾æ ¼å¼è¼¸å‡ºæ™‚é–“
+ * @param array $format è¼¸å‡ºæ ¼å¼
  * $format = [
  *     'total' => ['head' => '...', 'body' => '...', 'foot' => '...'],
  *     'block' => ['head' => '...', 'body' => '...', 'foot' => '...']
@@ -330,24 +330,24 @@ function stopwatch($tag = '') { }
 function stopwatch_format($format = []) { return ""; }
 
 /**
- * ÀË¬d¬O§_¦³·sª©®Ø¬[
- * @param boolean $details ¬O§_¨ú±o¸Ô²Ó¸ê®Æ
+ * æª¢æŸ¥æ˜¯å¦æœ‰æ–°ç‰ˆæ¡†æ¶
+ * @param boolean $details æ˜¯å¦å–å¾—è©³ç´°è³‡æ–™
  * @return int|array
  */
 function check_for_updates($details = false) { return []; }
 
 /**
- * JWT ½s½X
- * @param mixed $data ¸ê®Æ
- * @param string $secret ±KÆ_
+ * JWT ç·¨ç¢¼
+ * @param mixed $data è³‡æ–™
+ * @param string $secret å¯†é‘°
  * @return string
  */
 function jwt_encode($data, $secret) { return ""; }
 
 /**
- * JWT ¸Ñ½X»PÅçÃÒ
- * @param string $token TOKEN¤º®e
- * @param string $secret ±KÆ_
+ * JWT è§£ç¢¼èˆ‡é©—è­‰
+ * @param string $token TOKENå…§å®¹
+ * @param string $secret å¯†é‘°
  * @return mixed
  */
 function jwt_decode($token, $secret) { return []; }
