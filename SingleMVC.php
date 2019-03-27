@@ -742,6 +742,9 @@ abstract class Model {
     private static function phc($r) {
         if (empty($r)) return ['header' => [], 'content' => ''];
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
+        if (stripos($h, "200 Connection established\r\n") !== false) {
+            list($f, $h, $cr) = explode("\r\n\r\n", $r, 3);
+        }
         $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
         $hr = ['Status' => intval(explode(' ', array_shift($fs))[1] ?? 0)];
         foreach ($fs as $f) {
