@@ -670,13 +670,13 @@ abstract class Model {
             if (!curl_setopt($ch, CURLOPT_COOKIEJAR, $c)) return false;
             if (!curl_setopt($ch, CURLOPT_COOKIEFILE, $c)) return false;
         }
-        if (!empty($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
+        if (isset($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
             if (!curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s * 1)) return false;
         }
         if (!empty($o["Proxy"]) && is_string($p = $o["Proxy"])) {
             if (!curl_setopt($ch, CURLOPT_PROXY, $p)) return false;
         }
-        if (!empty($o["HTTP-Version"]) && is_int($v = $o["HTTP-Version"])) {
+        if (isset($o["HTTP-Version"]) && is_int($v = $o["HTTP-Version"])) {
             if (!curl_setopt($ch, CURLOPT_HTTP_VERSION, $v)) return false;
         }
         if (!curl_setopt($ch, CURLOPT_RETURNTRANSFER, true)) return false;
