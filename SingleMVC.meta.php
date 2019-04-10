@@ -3,7 +3,8 @@ define('ROOT', '');
 define('VROOT', '');
 define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.19.327');
+define('VERSION', '1.19.410');
+
 class SingleMVC {
     /**
      * 取得或設定程式組態
@@ -233,6 +234,13 @@ abstract class Model {
      * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
+
+    /**
+     * 解析請求的回應
+     * @param string $response 回應資料
+     * @return array
+     */
+    protected static function request_parse($response) { return []; }
 }
 
 /**

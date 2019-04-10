@@ -1,5 +1,7 @@
 <?php
 #region SingleMVC
+define('VERSION', '1.19.410');
+
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
     die('Requires PHP 7 or higher');
@@ -8,7 +10,6 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 ob_start();
 
 define('DS', DIRECTORY_SEPARATOR);
-define('VERSION', '1.19.327');
 header('Framework: SingleMVC '.VERSION);
 
 if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
@@ -723,11 +724,11 @@ abstract class Model {
         for ($i = $s; $i < $e; $i++) {
             if ($cb) {
                 $t = curl_multi_getcontent($rs[$i][$n]);
-                $r[] = array_merge($rs[$i], $get_header ? self::phc($t) : ['content' => $t]);
+                $r[] = array_merge($rs[$i], $get_header ? self::request_parse($t) : ['content' => $t]);
                 curl_close($rs[$i][$n]);
             } else {
                 $t = curl_multi_getcontent($rs[$i]);
-                $r[] = $get_header ? self::phc($t) : $t;
+                $r[] = $get_header ? self::request_parse($t) : $t;
                 curl_close($rs[$i]);
             }
         }
@@ -736,10 +737,11 @@ abstract class Model {
 
     /**
      * 解析請求的回應
-     * @param string $r 回應資料
+     * @param string $response 回應資料
      * @return array
      */
-    private static function phc($r) {
+    protected static function request_parse($response) {
+        $r = $response;
         if (empty($r)) return ['header' => [], 'content' => ''];
         list($h, $cr) = explode("\r\n\r\n", $r, 2);
         if (stripos($h, "200 Connection established\r\n") !== false) {
@@ -923,9 +925,10 @@ function stopwatch_format($format = []) {
  * @return int|array
  */
 function check_for_updates($details = false) {
-    if (preg_match('^[\d]\.[\d\.]*[\d]$', $o = file_get_contents('https://tails03119.atomdragon.tw/works/SingleMVC/version'))) {
-        $r = version_compare(VERSION, $o);
-        return !$details ? $r < 0 : ['result' => $r, 'online' => $o, 'current' => VERSION];
+    $file = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
+    if (preg_match('([\d]\.[\d\.]*[\d])', $file, $m)) {
+        $r = version_compare(VERSION, $m[0]);
+        return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION];
     } else {
         return !$details ? false : ['result' => -1, 'online' => 'unknow', 'current' => VERSION];
     }
