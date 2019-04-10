@@ -925,6 +925,7 @@ function stopwatch_format($format = []) {
  * @return int|array
  */
 function check_for_updates($details = false) {
+    clearstatcache();
     $file = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
     if (preg_match('([\d]\.[\d\.]*[\d])', $file, $m)) {
         $r = version_compare(VERSION, $m[0]);
