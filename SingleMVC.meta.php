@@ -32,14 +32,14 @@ class SingleMVC {
     /**
      * 載入檔案
      * @param string $file 檔案路徑
-     * @return string|boolean
+     * @return string|bool
      */
     public static function require($file) { return ""; }
 
     /**
      * 檢查檔案是否可以載入
      * @param string $file 檔案路徑
-     * @return string|boolean
+     * @return string|bool
      */
     public static function require_check($file) { return ''; }
 
@@ -71,21 +71,21 @@ class SingleMVC {
      * 讀取語系
      * @param string $lang 語系名稱
      * @param string $now 目前的語系名稱
-     * @return boolean
+     * @return bool
      */
     public static function lang_load($lang = '', &$now = null) { return true; }
 
     /**
      * 更新 composer 套件
-     * @param boolean $details 是否取得詳細資料
-     * @return boolean|array
+     * @param bool $details 是否取得詳細資料
+     * @return bool|array
      */
     public static function composer_update($details = false) { return true; }
 
     /**
      * 檢查是否有新版框架
-     * @param boolean $details 是否取得詳細資料
-     * @return int|array
+     * @param bool $details 是否取得詳細資料
+     * @return bool|array
      */
     public static function check_for_updates($details = false) { return 0; }
 }
@@ -130,7 +130,7 @@ abstract class Model {
      * 驗證密碼與雜湊值
      * @param string $password 輸入密碼
      * @param string $hash 已加密的密碼
-     * @return boolean
+     * @return bool
      */
     protected static function password_verify($password, $hash) { return true; }
 
@@ -148,7 +148,7 @@ abstract class Model {
 
     /**
      * 連線 SQL 資料庫
-     * @return boolean
+     * @return bool
      */
     protected function db_connect() { return true; }
 
@@ -174,7 +174,7 @@ abstract class Model {
 
     /**
      * 取得資料
-     * @param boolean $force_array 單筆資料仍傳回二維陣列
+     * @param bool $force_array 單筆資料仍傳回二維陣列
      * @return array|bool
      */
     protected function db_select($force_array = false) { return []; }
@@ -190,31 +190,31 @@ abstract class Model {
      * @param int|string|array $parameter 名稱/參數
      * @param mixed $value 數值
      * @param int $type 型別
-     * @return boolean
+     * @return bool
      */
     protected function db_bind($parameter, $value = '', $type = PDO::PARAM_STR) { return true; }
 
     /**
      * 開始交易
-     * @return boolean
+     * @return bool
      */
     protected function db_begin() { return true; }
 
     /**
      * 提交交易
-     * @return boolean
+     * @return bool
      */
     protected function db_commit() { return true; }
 
     /**
      * 復原交易
-     * @return boolean
+     * @return bool
      */
     protected function db_rollBack() { return true; }
 
     /**
      * 取得除錯資訊
-     * @return boolean|string
+     * @return bool|string
      */
     protected function db_debug() { return true; }
 
@@ -224,7 +224,7 @@ abstract class Model {
      * @param string $method 請求方法
      * @param mixed $data 資料
      * @param array $option 選項
-     * @param boolean $get_header 是否傳回 Header
+     * @param bool $get_header 是否傳回 Header
      * @return string|array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ""; }
@@ -244,7 +244,7 @@ abstract class Model {
      * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
-     * @param boolean $get_header 是否傳回 Header
+     * @param bool $get_header 是否傳回 Header
      * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) { return []; }
@@ -290,7 +290,7 @@ function lang($key = '') { return ""; }
  * 讀取語系
  * @param string $lang 語系名稱
  * @param string $now 目前的語系名稱
- * @return boolean
+ * @return bool
  */
 function lang_load($lang = '', &$now = null) { return true; }
 
@@ -298,7 +298,7 @@ function lang_load($lang = '', &$now = null) { return true; }
  * 檢查字串是否以特定字串開頭
  * @param string $haystack 字串
  * @param string $needle 特定字串
- * @return boolean
+ * @return bool
  */
 function starts_with($haystack, $needle) { return true; }
 
@@ -306,7 +306,7 @@ function starts_with($haystack, $needle) { return true; }
  * 檢查字串是否以特定字串結尾
  * @param string $haystack 字串
  * @param string $needle 特定字串
- * @return boolean
+ * @return bool
  */
 function ends_with($haystack, $needle) { return true; }
 
@@ -353,8 +353,8 @@ function stopwatch_format($format = []) { return ""; }
 
 /**
  * 檢查是否有新版框架
- * @param boolean $details 是否取得詳細資料
- * @return int|array
+ * @param bool $details 是否取得詳細資料
+ * @return bool|array
  */
 function check_for_updates($details = false) { return 0; }
 

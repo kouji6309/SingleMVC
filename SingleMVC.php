@@ -182,7 +182,7 @@ class SingleMVC {
      * 檢查 Class, Method 和 Parameter
      * @param array $u 已分割的 URL
      * @param string $d 預設路由
-     * @return array|boolean
+     * @return array|bool
      */
     private static function cmp($u, $d = null) {
         $C = null; $M = null; $P = []; $r = self::$config->routes; $cd = SOURCE_DIR.DS.'controllers'; $pc = null;
@@ -216,7 +216,7 @@ class SingleMVC {
      * 檢查 Class 和 Method 是否正確
      * @param string $c Class 名稱
      * @param string $m Method 名稱
-     * @return array|boolean
+     * @return array|bool
      */
     private static function ccm($c, $m) {
         $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
@@ -232,7 +232,7 @@ class SingleMVC {
     /**
      * 載入檔案
      * @param string $file 檔案路徑
-     * @return string|boolean
+     * @return string|bool
      */
     public static function require($file) {
         $f = false;
@@ -243,7 +243,7 @@ class SingleMVC {
     /**
      * 檢查檔案是否可以載入
      * @param string $file 檔案路徑
-     * @return string|boolean
+     * @return string|bool
      */
     public static function require_check($file) {
         if (!ends_with($f = $file, '.php')) $f .= '.php';
@@ -365,7 +365,7 @@ class SingleMVC {
      * 讀取語系
      * @param string $lang 語系名稱
      * @param string $now 目前的語系名稱
-     * @return boolean
+     * @return bool
      */
     public static function lang_load($lang = '', &$now = null) {
         static $ol = null; $l = $lang;
@@ -383,8 +383,8 @@ class SingleMVC {
 
     /**
      * 更新 composer 套件
-     * @param boolean $details 是否取得詳細資料
-     * @return boolean|array
+     * @param bool $details 是否取得詳細資料
+     * @return bool|array
      */
     public static function composer_update($details = false) {
         ini_set('memory_limit', '4095M');
@@ -414,8 +414,8 @@ class SingleMVC {
 
     /**
      * 檢查是否有新版框架
-     * @param boolean $details 是否取得詳細資料
-     * @return int|array
+     * @param bool $details 是否取得詳細資料
+     * @return bool|array
      */
     public static function check_for_updates($details = false) {
         clearstatcache();
@@ -481,7 +481,7 @@ abstract class Model {
      * 驗證密碼與雜湊值
      * @param string $password 輸入密碼
      * @param string $hash 已加密的密碼
-     * @return boolean
+     * @return bool
      */
     protected static function password_verify($password, $hash) {
         return password_verify($password, $hash);
@@ -501,7 +501,7 @@ abstract class Model {
 
     /**
      * 連線 SQL 資料庫
-     * @return boolean
+     * @return bool
      */
     protected function db_connect() {
         try {
@@ -557,7 +557,7 @@ abstract class Model {
 
     /**
      * 取得資料
-     * @param boolean $force_array 單筆資料仍傳回二維陣列
+     * @param bool $force_array 單筆資料仍傳回二維陣列
      * @return array|bool
      */
     protected function db_select($force_array = false) {
@@ -581,7 +581,7 @@ abstract class Model {
      * @param int|string|array $parameter 名稱/參數
      * @param mixed $value 數值
      * @param int $type 型別
-     * @return boolean
+     * @return bool
      */
     protected function db_bind($parameter, $value = '', $type = PDO::PARAM_STR) {
         if ($s = $this->db_statement) {
@@ -616,7 +616,7 @@ abstract class Model {
 
     /**
      * 開始交易
-     * @return boolean
+     * @return bool
      */
     protected function db_begin() {
         if ($this->db_connect()) return self::$db_pdo->beginTransaction();
@@ -625,7 +625,7 @@ abstract class Model {
 
     /**
      * 提交交易
-     * @return boolean
+     * @return bool
      */
     protected function db_commit() {
         if ($this->db_connect()) return self::$db_pdo->commit();
@@ -634,7 +634,7 @@ abstract class Model {
 
     /**
      * 復原交易
-     * @return boolean
+     * @return bool
      */
     protected function db_rollBack() {
         if ($this->db_connect()) return self::$db_pdo->rollBack();
@@ -643,7 +643,7 @@ abstract class Model {
 
     /**
      * 取得除錯資訊
-     * @return boolean|string
+     * @return bool|string
      */
     protected function db_debug() {
         if ($s = $this->db_statement) {
@@ -660,7 +660,7 @@ abstract class Model {
      * @param string $method 請求方法
      * @param mixed $data 資料
      * @param array $option 選項
-     * @param boolean $get_header 是否傳回 Header
+     * @param bool $get_header 是否傳回 Header
      * @return string|array|bool
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
@@ -739,7 +739,7 @@ abstract class Model {
      * @param mixed $rs 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
-     * @param boolean $get_header 是否傳回 Header
+     * @param bool $get_header 是否傳回 Header
      * @return string|array|bool
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
@@ -881,7 +881,7 @@ function lang($key = '') {
  * 讀取語系
  * @param string $lang 語系名稱
  * @param string $now 目前的語系名稱
- * @return boolean
+ * @return bool
  */
 function lang_load($lang = '', &$now = null) {
     return SingleMVC::lang_load($lang, $now);
@@ -891,7 +891,7 @@ function lang_load($lang = '', &$now = null) {
  * 檢查字串是否以特定字串開頭
  * @param string $haystack 字串
  * @param string $needle 特定字串
- * @return boolean
+ * @return bool
  */
 function starts_with($haystack, $needle) {
     return substr($haystack, 0, strlen($n = $needle)) === $n;
@@ -901,7 +901,7 @@ function starts_with($haystack, $needle) {
  * 檢查字串是否以特定字串結尾
  * @param string $haystack 字串
  * @param string $needle 特定字串
- * @return boolean
+ * @return bool
  */
 function ends_with($haystack, $needle) {
     return !($l = strlen($n = $needle)) || (substr($haystack, -$l) === $n);
@@ -998,8 +998,8 @@ function stopwatch_format($format = []) {
 
 /**
  * 檢查是否有新版框架
- * @param boolean $details 是否取得詳細資料
- * @return int|array
+ * @param bool $details 是否取得詳細資料
+ * @return bool|array
  */
 function check_for_updates($details = false) {
     return SingleMVC::check_for_updates($details);
