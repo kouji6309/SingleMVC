@@ -217,7 +217,7 @@ class SingleMVC {
      */
     private static function ccm($c, $m) {
         $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-    $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
+        $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
         if ($f1($c, $rm = ($m.'_'.self::$hm))) {
             return [$c, $rm];
         } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
@@ -376,6 +376,22 @@ class SingleMVC {
             define('LANG', $l);
         }
         return ($now = self::$ld) == $l;
+    }
+
+    /**
+     * 檢查是否有新版框架
+     * @param boolean $details 是否取得詳細資料
+     * @return int|array
+     */
+    public static function check_for_updates($details = false) {
+        clearstatcache();
+        $file = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
+        if (preg_match('([\d]\.[\d\.]*[\d])', $file, $m)) {
+            $r = version_compare(VERSION, $m[0]);
+            return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION];
+        } else {
+            return !$details ? false : ['result' => -1, 'online' => 'unknow', 'current' => VERSION];
+        }
     }
 }
 
@@ -925,14 +941,7 @@ function stopwatch_format($format = []) {
  * @return int|array
  */
 function check_for_updates($details = false) {
-    clearstatcache();
-    $file = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
-    if (preg_match('([\d]\.[\d\.]*[\d])', $file, $m)) {
-        $r = version_compare(VERSION, $m[0]);
-        return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION];
-    } else {
-        return !$details ? false : ['result' => -1, 'online' => 'unknow', 'current' => VERSION];
-    }
+    SingleMVC::check_for_update($details);
 }
 
 /**
