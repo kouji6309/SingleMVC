@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.410');
+define('VERSION', '1.19.426');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -84,6 +84,9 @@ class SingleMVC {
         session_start(self::$config->session);
         // 處理路由
         $_S = $_SERVER;
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !starts_with($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77')) {
+            $_S['REQUEST_URI'] = '/BCBA235AA0401FD10464DF6AFBFAAB77';
+        }
         $u = parse_url('http://host'.(function ($s) {
             $s = preg_split('/(?!^)(?=.)/u', $s); $r = '';
             foreach ($s as $c) {
@@ -376,6 +379,37 @@ class SingleMVC {
             define('LANG', $l);
         }
         return ($now = self::$ld) == $l;
+    }
+
+    /**
+     * 更新 composer 套件
+     * @param boolean $details 是否取得詳細資料
+     * @return boolean|array
+     */
+    public static function composer_update($details = false) {
+        ini_set('memory_limit', '4095M');
+        ini_set('max_execution_time', 3600);
+        clearstatcache();
+        $r = ['status' => -1, 'message' => '', 'log' => '']; $d = $details; $tp = sys_get_temp_dir();
+        if (!file_put_contents($cp = $tp.DS.'composer.phar', fopen('https://getcomposer.org/composer.phar', 'r'))) {
+            $r['status'] = -1;  $r['message'] = 'Unabled to download composer.';
+        } elseif (!($c = new Phar($cp)) || !$c->extractTo($ep = $tp.DS.'composer', null, true)) {
+            $r['status'] = -2;  $r['message'] = 'Unabled to setup composer.';
+        } elseif (!self::require($ep.DS.'/vendor/autoload.php') || !putenv('COMPOSER_HOME='.$ep) || !chdir(ROOT)) {
+            $r['status'] = -3; $r['message'] = 'Unabled to setup composer.';
+        } else {
+            try {
+                $i = new Symfony\Component\Console\Input\ArrayInput(['command' => 'update']);
+                $o = new Symfony\Component\Console\Output\BufferedOutput();
+                $a = new Composer\Console\Application();
+                $a->setAutoExit(false);
+                $r['status'] = $a->run($i, $o); $r['log'] = $o->fetch();
+            }
+            catch(Exception $ex) {
+                $r['status'] = -4; $r['message'] = $ex->getMessage(); $r['log'] = $ex->getTraceAsString();
+            }
+        }
+        return $d ? $r : $r['status'] == 0;
     }
 
     /**
@@ -780,10 +814,37 @@ abstract class Model {
 }
 
 /**
+ * 提供 Composer 更新用控制器
+ */
+class BCBA235AA0401FD10464DF6AFBFAAB77 extends Controller {
+    public function __construct() {
+        if (self::check()) exit(header_404());
+    }
+
+    public static function check() {
+        return file_exists(ROOT.DS.'vendor'.DS.'autoload.php') || !file_exists(ROOT.DS.'composer.json');
+    }
+
+    public function index() {
+        output('html', '<!DOCTYPE html><title>Installing...</title>'.
+            '<script src="https://code.jquery.com/jquery-3.4.0.min.js"></script>'.
+            '<h3 style="color:green">Updating dependencies...</h3><pre>Please wait...</pre>'.
+            '<script>$.ajax({url:"'.VROOT.'/BCBA235AA0401FD10464DF6AFBFAAB77/update",type:"post",success:function(r){'.
+            '$("pre").text(r.log);if(r.status===0){$("h3").text("Update success, reload in 5 seconds.");'.
+            'setTimeout(function(){location.reload();},5000);}else{'.
+            '$("h3").text("Update error, please upload vendor yourself.").css("color","red");}}})</script>');
+    }
+
+    public function update_post() {
+        output('json', SingleMVC::composer_update(true));
+    }
+}
+
+/**
  * 設定狀態 404
  */
 function header_404() {
-    output('html', '', 404);
+    http_response_code(404);
 }
 
 /**
@@ -941,7 +1002,7 @@ function stopwatch_format($format = []) {
  * @return int|array
  */
 function check_for_updates($details = false) {
-    SingleMVC::check_for_update($details);
+    return SingleMVC::check_for_updates($details);
 }
 
 /**

@@ -1,9 +1,9 @@
 <?php
+define('VERSION', '1.19.426');
+define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
 define('VROOT', '');
-define('DS', '');
 define('SOURCE_DIR', '');
-define('VERSION', '1.19.410');
 
 class SingleMVC {
     /**
@@ -74,6 +74,20 @@ class SingleMVC {
      * @return boolean
      */
     public static function lang_load($lang = '', &$now = null) { return true; }
+
+    /**
+     * 更新 composer 套件
+     * @param boolean $details 是否取得詳細資料
+     * @return boolean|array
+     */
+    public static function composer_update($details = false) { return true; }
+
+    /**
+     * 檢查是否有新版框架
+     * @param boolean $details 是否取得詳細資料
+     * @return int|array
+     */
+    public static function check_for_updates($details = false) { return 0; }
 }
 
 class FrameworkConfig {
@@ -342,7 +356,7 @@ function stopwatch_format($format = []) { return ""; }
  * @param boolean $details 是否取得詳細資料
  * @return int|array
  */
-function check_for_updates($details = false) { return []; }
+function check_for_updates($details = false) { return 0; }
 
 /**
  * JWT 編碼
