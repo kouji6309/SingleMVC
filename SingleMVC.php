@@ -53,7 +53,7 @@ class SingleMVC {
         session_status() == PHP_SESSION_NONE && session_start(self::$config->session);
         // 參數處理
         $_S = $_SERVER;
-        foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_[$k] ?? null;
+        foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
         // 處理路由
         if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !starts_with($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77')) {
             $_S['REQUEST_URI'] = '/BCBA235AA0401FD10464DF6AFBFAAB77';
