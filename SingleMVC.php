@@ -9,11 +9,11 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
 
 ob_start();
 
-define('DS', DIRECTORY_SEPARATOR);
-header('Framework: SingleMVC '.VERSION);
+!defined('DS') && define('DS', DIRECTORY_SEPARATOR);
+!defined('ROOT') && define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
+!defined('SOURCE_DIR') && define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
 
-if (!defined('ROOT')) define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
-define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
+header('Framework: SingleMVC '.VERSION);
 
 class SingleMVC {
     /**
@@ -97,24 +97,25 @@ class SingleMVC {
         })($_S['REQUEST_URI']));
         $q = $u['query'] ?? '';
         $u = urldecode($u['path'] ?? '');
-        if (!empty($_S['SCRIPT_NAME']) && ($sn = $_S['SCRIPT_NAME'])) {
-            define('VROOT', rtrim(str_replace(DS, '/', $sd = dirname($sn)), '/'));
+        if ($sn = $_S['SCRIPT_NAME'] ?: '') {
+            $sd = dirname($sn);
+            !defined('VROOT') && define('VROOT', rtrim(str_replace(DS, '/', $sd), '/'));
             if (mb_strpos($u, $sn) === 0) {
                 $u = mb_substr($u, mb_strlen($sn));
             } elseif (mb_strpos($u, $sd) === 0) {
                 $u = mb_substr($u, mb_strlen($sd));
             }
         } else {
-            define('VROOT', '');
+            !defined('VROOT') && define('VROOT', '');
         }
         if (trim($u, '/') === '') {
-            if (count($t = preg_split('/[?&]/', $q, 2)) == 2) {
+            if (count($t = explode('?', $q, 2)) == 2) {
                 list($u, $q) = $t;
             }
         }
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
-        if (!empty(self::$config->routes) && ($r = self::$config->routes) && is_array($r)) {
+        if (($r = self::$config->routes ?? null) && is_array($r)) {
             foreach ($r as $k => $v) {
                 $k = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $k);
                 if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
@@ -248,7 +249,7 @@ class SingleMVC {
     public static function require_check($file) {
         if (!ends_with($f = $file, '.php')) $f .= '.php';
         $f = str_replace(['\\', '/'], DS, $f);
-        return file_exists($f) && is_readable($f) ? $f : false;
+        return file_exists($f) && is_resource($h = @fopen($f, "r")) && fclose($h) ? $f : false;
     }
 
     /**
