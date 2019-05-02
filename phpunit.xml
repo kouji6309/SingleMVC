@@ -1,0 +1,27 @@
+<phpunit
+	bootstrap="./tests/bootstrap.php"
+	backupGlobals="true"
+	colors="true">
+  <testsuites>
+    <testsuite name="SingleMVC Test">
+      <directory suffix="_Test.php" phpVersion="7.0" phpVersionOperator=">=">./tests/</directory>
+    </testsuite>
+  </testsuites>
+  <filter>
+    <whitelist>
+      <directory suffix=".php">./source/models</directory>
+      <directory suffix=".php">./source/controllers</directory>
+      <directory suffix=".php">./source/views</directory>
+      <directory suffix=".php">./source/3rd</directory>
+      <directory suffix=".php">./source/helpers</directory>
+      <file>./SingleMVC.php</file>
+      <file>./index.php</file>
+    </whitelist>
+  </filter>
+  <logging>
+    <log type="coverage-html" target="./tests/result" />
+  </logging>
+  <php>
+    <const name="PHPUNIT" value="true"/>
+  </php>
+</phpunit>

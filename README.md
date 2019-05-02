@@ -6,7 +6,8 @@ Single MVC 是一個方便使用、功能完整、單一檔案的 PHP 框架。�
 * 基礎 MVC
 * 自動載入與 Composer 安裝
 * 路由覆寫
-* RESTful
+* RESTful 風格
+* PHPUnit 測試
 * 統一的輸入、輸出函數
 * 多國語系函數
 * 資料庫存取函數

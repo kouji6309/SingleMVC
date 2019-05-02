@@ -1,7 +1,10 @@
+/SingleMVC.wiki
+/SingleMVC.wiki/*
+/tests/result
+/tests/result/*
 /.vs
 /.vs/*
 *.phpproj
 *.phpproj.user
 *.sln
-/SingleMVC.wiki
-/SingleMVC.wiki/*
+*.cache

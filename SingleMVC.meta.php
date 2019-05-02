@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '1.19.426');
+define('VERSION', '1.19.502');
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
 define('VROOT', '');
@@ -28,6 +28,12 @@ class SingleMVC {
      * 產生 SingleMVC 實例並執行
      */
     public function __construct() { }
+
+    /**
+     * 註冊自動載入
+     * @return void
+     */
+    public static function autoload_register() { }
 
     /**
      * 載入檔案
@@ -87,7 +93,7 @@ class SingleMVC {
      * @param bool $details 是否取得詳細資料
      * @return bool|array
      */
-    public static function check_for_updates($details = false) { return 0; }
+    public static function check_for_updates($details = false) { return false; }
 }
 
 class FrameworkConfig {
@@ -356,7 +362,7 @@ function stopwatch_format($format = []) { return ""; }
  * @param bool $details 是否取得詳細資料
  * @return bool|array
  */
-function check_for_updates($details = false) { return 0; }
+function check_for_updates($details = false) { return false; }
 
 /**
  * JWT 編碼

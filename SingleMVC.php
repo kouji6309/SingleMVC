@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.426');
+define('VERSION', '1.19.502');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -34,7 +34,8 @@ class SingleMVC {
      */
     public static $view = [];
 
-    private static $is_run = 0;
+    private static $ir = 0;
+    private static $hl = 0;
     private static $fs = null;
     private static $hm = 'get';
     private static $ud = [];
@@ -47,43 +48,13 @@ class SingleMVC {
     /**
      * 產生 SingleMVC 實例並執行
      */
-    public function __construct() {
-        self::run();
-    }
-
-    private static function run() {
-        if (self::$is_run++) return;
-        // 載入第三方套件
-        foreach (['3rd', 'helper'] as $f) {
-            if (is_dir($h = SOURCE_DIR.DS.$f)) {
-                $hs = array_diff(scandir($h), ['.', '..']);
-                foreach ($hs as $i) self::require($h.DS.$i);
-            }
-        }
-        // 自動載入 與 Composer
-        spl_autoload_register(function ($c) {
-            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
-            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
-                if (self::$fs == null) {
-                    self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
-                        if (file_exists($p) && is_dir($p)) {
-                            $d = []; $l = array_diff(scandir($p), ['.', '..']);
-                            foreach ($l as $i) { if (is_dir($i = $p.DS.$i)) { $d[] = $i; } else if (is_file($i)) { self::$fs[] = $i; } }
-                            sort($d);
-                            foreach ($d as $i) $f1($i);
-                        }
-                    };
-                    foreach ($fs as $f) $f1($f);
-                }
-                foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
-            }
-        });
-        self::require(ROOT.DS.'vendor'.DS.'autoload.php');
-        // 載入設定
-        self::require(SOURCE_DIR.DS.'config.php');
-        session_start(self::$config->session);
-        // 處理路由
+    public function __construct($args = []) {
+        if (!defined('PHPUNIT') && self::$ir++) return;
+        session_status() == PHP_SESSION_NONE && session_start(self::$config->session);
+        // 參數處理
         $_S = $_SERVER;
+        foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_[$k] ?? null;
+        // 處理路由
         if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !starts_with($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77')) {
             $_S['REQUEST_URI'] = '/BCBA235AA0401FD10464DF6AFBFAAB77';
         }
@@ -125,17 +96,17 @@ class SingleMVC {
         }
         // 處理輸入
         self::$ud = $_GET;
-        $raw = file_get_contents('php://input');
+        $raw = $args['php://input'] ?? file_get_contents('php://input');
         $ct = strtolower(explode(';', $_S['CONTENT_TYPE'] ?? 'text/plain')[0]);
         self::$hm = $hm = strtolower($_S['REQUEST_METHOD'] ?? 'get');
         if (($ip = $hm == 'post') && $ct == 'application/x-www-form-urlencoded') {
-            self::$cd = $_POST;
+            self::$cd = $args['$_POST'] ?? $_POST;
         } elseif (!($ig = $hm == 'get') && $ct == 'application/x-www-form-urlencoded') {
             mb_parse_str($raw, $tp1);
             self::$cd = $tp1;
         } elseif ($ip && $ct == 'multipart/form-data') {
-            self::$cd = $_POST;
-            self::$fd = $_FILES;
+            self::$cd = $args['$_POST'] ?? $_POST;
+            self::$fd = $args['$_FILES'] ?? $_FILES;
         } elseif (!$ip && $ct == 'multipart/form-data') {
             $tp1 = ['c' => [], 'f' => []];
             preg_match('/boundary=(.*)$/', $_S['CONTENT_TYPE'], $b);
@@ -177,6 +148,42 @@ class SingleMVC {
             header_404();
         }
         ob_flush();
+    }
+
+    /**
+     * 註冊自動載入
+     * @return void
+     */
+    public static function autoload_register() {
+        if (self::$hl++) return;
+        // 載入第三方套件
+        foreach (['3rd', 'helper'] as $f) {
+            if (is_dir($h = SOURCE_DIR.DS.$f)) {
+                $hs = array_diff(scandir($h), ['.', '..']);
+                foreach ($hs as $i) self::require($h.DS.$i);
+            }
+        }
+        // 自動載入 與 Composer
+        spl_autoload_register(function ($c) {
+            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
+                if (self::$fs == null) {
+                    self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
+                        if (file_exists($p) && is_dir($p)) {
+                            $d = []; $l = array_diff(scandir($p), ['.', '..']);
+                            foreach ($l as $i) { if (is_dir($i = $p.DS.$i)) { $d[] = $i; } else if (is_file($i)) { self::$fs[] = $i; } }
+                            sort($d);
+                            foreach ($d as $i) $f1($i);
+                        }
+                    };
+                    foreach ($fs as $f) $f1($f);
+                }
+                foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
+            }
+        });
+        self::require(ROOT.DS.'vendor'.DS.'autoload.php');
+        // 載入設定
+        self::require(SOURCE_DIR.DS.'config.php');
     }
 
     /**
@@ -1041,5 +1048,7 @@ function jwt_decode($token, $secret) {
 }
 
 SingleMVC::$config = new FrameworkConfig();
+SingleMVC::autoload_register();
+
 if (!defined('PAUSE')) register_shutdown_function(function () { new SingleMVC(); exit(); });
 #endregion
