@@ -14,8 +14,6 @@
       <directory suffix=".php">./source/views</directory>
       <directory suffix=".php">./source/3rd</directory>
       <directory suffix=".php">./source/helpers</directory>
-      <file>./SingleMVC.php</file>
-      <file>./index.php</file>
     </whitelist>
   </filter>
   <logging>
