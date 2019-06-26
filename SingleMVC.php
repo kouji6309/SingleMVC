@@ -79,14 +79,14 @@ class SingleMVC {
         } else {
             !defined('VROOT') && define('VROOT', '');
         }
+        !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
+            'http'.(($en = $_S['HTTPS'] == 'on') ? 's' : '').'://'.$_S['HTTP_HOST'].
+            ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
         if (trim($u, '/') === '') {
             if (count($t = explode('?', $q, 2)) == 2) {
                 list($u, $q) = $t;
             }
         }
-        !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
-            'http'.(($en = $_S['HTTPS'] == 'on') ? 's' : '').'://'.$_S['HTTP_HOST'].
-            ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
         if (($r = self::$config->routes ?? null) && is_array($r)) {
