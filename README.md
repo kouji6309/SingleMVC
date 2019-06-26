@@ -1,6 +1,6 @@
-# Single MVC
+# SingleMVC
 
-Single MVC 是一個方便使用、功能完整、單一檔案的 PHP 框架。它提供了以下功能：
+SingleMVC 是一個方便使用、功能完整、單一檔案的 PHP 框架。它提供了以下功能：
 
 * 多種目錄結構
 * 基礎 MVC

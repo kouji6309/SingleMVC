@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.502');
+define('VERSION', '1.19.626');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -84,6 +84,9 @@ class SingleMVC {
                 list($u, $q) = $t;
             }
         }
+        !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
+            'http'.(($en = $_S['HTTPS'] == 'on') ? 's' : '').'://'.$_S['HTTP_HOST'].
+            ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
         if (($r = self::$config->routes ?? null) && is_array($r)) {
@@ -685,9 +688,14 @@ abstract class Model {
      * @return resource|bool
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) {
+        //if (is_array($ob = $url)) {
+        //    $url = $ob['url'] ?? ''; $method = $ob['method'] ?? $ob['type'] ?? 'get';
+        //    $data = $ob['data'] ?? []; $option = []; $option['Header'] = $ob['headers'] ?? [];
+        //    if (!empty($ob['contentType'])) $option['Header']['Content-Type'] = $ob['contentType'];
+        //}
         $ch = curl_init();
-        if (!$ch) return false;
         $m = strtoupper($method); $u = $url; $d = $data; $o = $option;
+        if (!$ch || !$u || !$m) return false;
         if (!curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m)) return false;
         if (!empty($option['Option']) && is_array($oo = $o['Option'])) {
             if (!curl_setopt_array($ch, $oo)) return false;

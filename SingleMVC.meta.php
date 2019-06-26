@@ -1,7 +1,8 @@
 <?php
-define('VERSION', '1.19.502');
+define('VERSION', '1.19.626');
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
+define('HOST', '');
 define('VROOT', '');
 define('SOURCE_DIR', '');
 
