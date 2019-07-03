@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.626');
+define('VERSION', '1.19.703');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -50,7 +50,7 @@ class SingleMVC {
      */
     public function __construct($args = []) {
         if (!defined('PHPUNIT') && self::$ir++) return;
-        session_status() == PHP_SESSION_NONE && session_start(self::$config->session);
+        session_status() == PHP_SESSION_NONE && session_start(self::$config->session ?: ['read_and_close' => true]);
         // 參數處理
         $_S = $_SERVER;
         foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
@@ -231,13 +231,41 @@ class SingleMVC {
      */
     private static function ccm($c, $m) {
         $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-        $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
+$f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
         if ($f1($c, $rm = ($m.'_'.self::$hm))) {
             return [$c, $rm];
         } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
             return [$c, $m];
         }
         return false;
+    }
+
+    /**
+     * 使用索引陣列取出陣列的值
+     * @param array $a 目標陣列
+     * @param array|string $k 索引陣列
+     * @return mixed
+     */
+    private static function av($a, $k) {
+        $f = false; if (!is_array($k)) $k = [$k];
+        foreach ($k as $i) if ($f = isset($a[$i])) { $a = $a[$i]; } else { break; }
+        return $f ? $a : null;
+    }
+
+    /**
+     * 使用索引陣列設定陣列的值
+     * @param array $a 目標陣列
+     * @param array|string $k 索引陣列
+     * @param mixed $v 數值
+     */
+    private static function sav(&$a, $k, $v) {
+        if (!is_array($k)) $k = [$k];
+        foreach ($k as $i) {
+            if (!is_array($a)) $a = [];
+            if (is_array($a) && !isset($a[$i])) $a[$i] = [];
+            $a = &$a[$i];
+        }
+        $a = $v;
     }
 
     /**
@@ -259,7 +287,7 @@ class SingleMVC {
     public static function require_check($file) {
         if (!ends_with($f = $file, '.php')) $f .= '.php';
         $f = str_replace(['\\', '/'], DS, $f);
-        return file_exists($f) && is_resource($h = @fopen($f, "r")) && fclose($h) ? $f : false;
+        return file_exists($f) && is_resource($h = @fopen($f, 'r')) && fclose($h) ? $f : false;
     }
 
     /**
@@ -295,9 +323,7 @@ class SingleMVC {
             $d = self::$cd;
         }
         if (is_array($k) && is_array($d)) {
-            $td = $d; $f = false;
-            foreach ($k as $i) if ($f = isset($td[$i])) { $td = $td[$i]; } else { break; }
-            return $f ? $td : null;
+            return self::av($d, $k);
         }
         return $k === null || $d === null ? $d : (is_array($d) ? $d[$k] ?? null : null);
     }
@@ -357,6 +383,50 @@ class SingleMVC {
     }
 
     /**
+     * 取得或設定 session
+     * @param string|array $key 索引
+     * @param mixed $value 數值
+     * @return mixed
+     */
+    public static function session($key, $value = null) {
+        $r = null;
+        if (count($a = func_get_args()) == 1) {
+            $r = self::av($_SESSION, $a[0]);
+        } else {
+            session_status() !== PHP_SESSION_ACTIVE && session_start();
+            $v = $a[1] instanceof \Closure ? $a[1](session($key)) : $a[1];
+            self::sav($_SESSION, $a[0], $v);
+            $r = session_write_close();
+        }
+        return $r;
+    }
+
+    /**
+     * 取得或設定 cookie
+     * @param string|array $key 索引
+     * @param mixed $value 數值
+     * @param int|array $expires 逾時時間/選項
+     * @param string $path 路徑
+     * @param string $domain 網域
+     * @param bool $secure 需使用加密連線
+     * @param bool $httponly 限制HTTP存取
+     * @return mixed
+     */
+    public static function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $secure = false, $httponly = false) {
+        $r = null; $e = $expires;
+        if (count($a = func_get_args()) == 1) {
+            $r = self::av($_COOKIE, $a[0]);
+        } else {
+            $v = $a[1] instanceof \Closure ? $a[1](cookie($key)) : $a[1]; $t = [];
+            self::sav($_COOKIE, $a[0], $v);
+            self::sav($t, $a[0], '');
+            $t = substr(urldecode(http_build_query($t)), 0, -1);
+            $r = is_array($e) ? setcookie($t, $v, $e) : setcookie($t, $v, $e, $path, $domain, $secure, $httponly);
+        }
+        return $r;
+    }
+
+    /**
      * 取得語系內容
      * @param string|array $key 索引
      * @return string|array
@@ -365,9 +435,9 @@ class SingleMVC {
         $r = '{MISSING}'; $k = $key;
         if (empty(self::$ld)) lang_load(self::$config->lang);
         if (is_string($k)) $k = [$k];
-        if (is_array($k) && !empty(self::$lang) && ($l = self::$lang) && !($f = false)) {
-            foreach ($k as $i) if (is_string($i) && $f = isset($l[$i])) { $l = $l[$i]; } else { $f = false; break; }
-            if ($f && (is_string($l) || is_array($l))) $r = $l;
+        if (is_array($k) && !empty(self::$lang)) {
+            $l = self::av(self::$lang, $k);
+            if (is_string($l) || is_array($l)) $r = $l;
         }
         return $r;
     }
@@ -740,10 +810,10 @@ abstract class Model {
         if (isset($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
             if (!curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s * 1)) return false;
         }
-        if (!empty($o["Proxy"]) && is_string($p = $o["Proxy"])) {
+        if (!empty($o['Proxy']) && is_string($p = $o['Proxy'])) {
             if (!curl_setopt($ch, CURLOPT_PROXY, $p)) return false;
         }
-        if (isset($o["HTTP-Version"]) && is_int($v = $o["HTTP-Version"])) {
+        if (isset($o['HTTP-Version']) && is_int($v = $o['HTTP-Version'])) {
             if (!curl_setopt($ch, CURLOPT_HTTP_VERSION, $v)) return false;
         }
         if (!curl_setopt($ch, CURLOPT_RETURNTRANSFER, true)) return false;
@@ -882,6 +952,31 @@ function input($key = null, $type = null) {
  */
 function output($view, $data = [], $flag = false) {
     return SingleMVC::output($view, $data, $flag);
+}
+
+/**
+ * 取得或設定 session
+ * @param string|array $key 索引
+ * @param mixed $value 數值
+ * @return mixed
+ */
+function session($key, $value = null) {
+    return call_user_func_array('SingleMVC::session', func_get_args());
+}
+
+/**
+ * 取得或設定 cookie
+ * @param string|array $key 索引
+ * @param mixed $value 數值
+ * @param int|array $expires 逾時時間/選項
+ * @param string $path 路徑
+ * @param string $domain 網域
+ * @param bool $secure 需使用加密連線
+ * @param bool $httponly 限制HTTP存取
+ * @return mixed
+ */
+function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $secure = false, $httponly = false) {
+    return call_user_func_array('SingleMVC::cookie', func_get_args());
 }
 
 /**
@@ -1028,7 +1123,7 @@ function check_for_updates($details = false) {
  * @return string
  */
 function jwt_encode($data, $secret) {
-    $h = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', "typ"=> "JWT"])));
+    $h = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', 'typ'=> 'JWT'])));
     $p = str_replace('=', '', base64_encode(json_encode($data)));
     $s = str_replace('=', '', base64_encode(hash_hmac('sha256', $h.'.'.$p, $secret, true)));
     return $h.'.'.$p.'.'.$s;

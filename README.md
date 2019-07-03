@@ -9,6 +9,7 @@ SingleMVC 是一個方便使用、功能完整、單一檔案的 PHP 框架。�
 * RESTful 風格
 * PHPUnit 測試
 * 統一的輸入、輸出函數
+* 簡易 SESSION、COOKIE 函數
 * 多國語系函數
 * 資料庫存取函數
 * CURL 請求函數

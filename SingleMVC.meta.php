@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '1.19.626');
+define('VERSION', '1.19.703');
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
 define('HOST', '');
@@ -41,7 +41,7 @@ class SingleMVC {
      * @param string $file 檔案路徑
      * @return string|bool
      */
-    public static function require($file) { return ""; }
+    public static function require($file) { return ''; }
 
     /**
      * 檢查檔案是否可以載入
@@ -56,7 +56,7 @@ class SingleMVC {
      * @param string $type 資料總類
      * @return mixed
      */
-    public static function input($key = null, $type = null) { return ""; }
+    public static function input($key = null, $type = null) { return ''; }
 
     /**
      * 輸出 View
@@ -65,14 +65,35 @@ class SingleMVC {
      * @param mixed $flag 附加選項
      * @return null|string
      */
-    public static function output($view, $data = [], $flag = false) { return ""; }
+    public static function output($view, $data = [], $flag = false) { return ''; }
+
+    /**
+     * 取得或設定 session
+     * @param string|array $key 索引
+     * @param mixed $value 數值
+     * @return mixed
+     */
+    public static function session($key, $value = null) { return ''; }
+
+    /**
+     * 取得或設定 cookie
+     * @param string|array $key 索引
+     * @param mixed $value 數值
+     * @param int|array $expires 逾時時間/選項
+     * @param string $path 路徑
+     * @param string $domain 網域
+     * @param bool $secure 需使用加密連線
+     * @param bool $httponly 限制HTTP存取
+     * @return mixed
+     */
+    public static function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $secure = false, $httponly = false) { return ''; }
 
     /**
      * 取得語系內容
      * @param string|array $key 索引
      * @return string|array
      */
-    public static function lang($key = '') { return ""; }
+    public static function lang($key = '') { return ''; }
 
     /**
      * 讀取語系
@@ -131,7 +152,7 @@ abstract class Model {
      * @param string $password 輸入密碼
      * @return string
      */
-    protected static function password_hash($password) { return ""; }
+    protected static function password_hash($password) { return ''; }
 
     /**
      * 驗證密碼與雜湊值
@@ -177,7 +198,7 @@ abstract class Model {
      * 插入資料
      * @return string|int|bool 最後新增的編號 或 新增列數
      */
-    protected function db_insert() { return ""; }
+    protected function db_insert() { return ''; }
 
     /**
      * 取得資料
@@ -234,7 +255,7 @@ abstract class Model {
      * @param bool $get_header 是否傳回 Header
      * @return string|array|bool
      */
-    protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ""; }
+    protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) { return ''; }
 
     /**
      * 建立一個非同步請求
@@ -275,7 +296,7 @@ function header_404() { }
  * @param string $type 資料總類
  * @return mixed
  */
-function input($key = null, $type = null) { return ""; }
+function input($key = null, $type = null) { return ''; }
 
 /**
  * 輸出 View
@@ -284,14 +305,35 @@ function input($key = null, $type = null) { return ""; }
  * @param mixed $flag 附加選項
  * @return null|string
  */
-function output($view, $data = [], $flag = false) { return ""; }
+function output($view, $data = [], $flag = false) { return ''; }
+
+/**
+ * 取得或設定 session
+ * @param string|array $key 索引
+ * @param mixed $value 數值
+ * @return mixed
+ */
+function session($key, $value = null)  { return ''; }
+
+/**
+ * 取得或設定 cookie
+ * @param string|array $key 索引
+ * @param mixed $value 數值
+ * @param int|array $expires 逾時時間/選項
+ * @param string $path 路徑
+ * @param string $domain 網域
+ * @param bool $secure 需使用加密連線
+ * @param bool $httponly 限制HTTP存取
+ * @return mixed
+ */
+function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $secure = false, $httponly = false) { return ''; }
 
 /**
  * 取得語系內容
  * @param string|array $key 索引
  * @return string|array
  */
-function lang($key = '') { return ""; }
+function lang($key = '') { return ''; }
 
 /**
  * 讀取語系
@@ -327,7 +369,7 @@ $_DEBUG = [];
  * @param mixed $msg 訊息
  * @return string
  */
-function debug($msg = '') { return ""; }
+function debug($msg = '') { return ''; }
 
 /**
  * 傾印資料
@@ -356,7 +398,7 @@ function stopwatch($tag = '') { }
  * ]
  * @return string
  */
-function stopwatch_format($format = []) { return ""; }
+function stopwatch_format($format = []) { return ''; }
 
 /**
  * 檢查是否有新版框架
@@ -371,7 +413,7 @@ function check_for_updates($details = false) { return false; }
  * @param string $secret 密鑰
  * @return string
  */
-function jwt_encode($data, $secret) { return ""; }
+function jwt_encode($data, $secret) { return ''; }
 
 /**
  * JWT 解碼與驗證
