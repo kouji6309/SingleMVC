@@ -55,7 +55,7 @@ class SingleMVC {
         $_S = $_SERVER;
         foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
         // 處理路由
-        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !starts_with($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77')) {
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77') === false) {
             $_S['REQUEST_URI'] = '/BCBA235AA0401FD10464DF6AFBFAAB77';
         }
         $u = parse_url('http://host'.(function ($s) {
