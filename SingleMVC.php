@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.703');
+define('VERSION', '1.19.808');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -55,8 +55,9 @@ class SingleMVC {
         $_S = $_SERVER;
         foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
         // 處理路由
-        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S['REQUEST_URI'], '/BCBA235AA0401FD10464DF6AFBFAAB77') === false) {
-            $_S['REQUEST_URI'] = '/BCBA235AA0401FD10464DF6AFBFAAB77';
+        $co = 'BCBA235AA0401FD10464DF6AFBFAAB77';
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S['REQUEST_URI'], '/'.$co) === false) {
+            $_S['REQUEST_URI'] = '/'.$co;
         }
         $u = parse_url('http://host'.(function ($s) {
             $s = preg_split('/(?!^)(?=.)/u', $s); $r = '';
@@ -89,7 +90,7 @@ class SingleMVC {
         }
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
-        if (($r = self::$config->routes ?? null) && is_array($r)) {
+        if (($r = self::$config->routes ?? null) && is_array($r) && strpos($u, $co) === false) {
             foreach ($r as $k => $v) {
                 $k = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $k);
                 if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
@@ -1031,7 +1032,7 @@ $_DEBUG = [];
 function debug($msg = '') {
     global $_DEBUG;
     list($us, $s) = explode(' ', microtime());
-    $t = date('H:i:s', $s).'.'.sprintf('%03d', floor($us * 1000));
+    $t = date('H:i:s', $s * 1).'.'.sprintf('%03d', floor($us * 1000));
     if (is_string($m = $msg)) {
         $d = $t."\t".$m;
     } else {
