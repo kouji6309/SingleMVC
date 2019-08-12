@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.808');
+define('VERSION', '1.19.812');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -630,7 +630,7 @@ abstract class Model {
             $l = self::$db_pdo->lastInsertId();
             if ($c == 1) {
                 return $l ?: $c;
-            } elseif ($c > 1) {
+            } else {
                 return $c;
             }
         }
