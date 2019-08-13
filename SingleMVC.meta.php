@@ -1,10 +1,11 @@
 <?php
-define('VERSION', '1.19.812');
+define('VERSION', '1.19.813');
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
 define('HOST', '');
 define('VROOT', '');
 define('SOURCE_DIR', '');
+define('__FRAMEWORK__', '');
 
 class SingleMVC {
     /**

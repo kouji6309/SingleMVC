@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.812');
+define('VERSION', '1.19.813');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -12,6 +12,7 @@ ob_start();
 !defined('DS') && define('DS', DIRECTORY_SEPARATOR);
 !defined('ROOT') && define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
 !defined('SOURCE_DIR') && define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
+!defined('__FRAMEWORK__') && define('__FRAMEWORK__', __FILE__);
 
 header('Framework: SingleMVC '.VERSION);
 
@@ -501,12 +502,12 @@ $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return e
      */
     public static function check_for_updates($details = false) {
         clearstatcache();
-        $file = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
-        if (preg_match('([\d]\.[\d\.]*[\d])', $file, $m)) {
+        $f = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
+        if (preg_match('([\d]\.[\d\.]*[\d])', $f, $m)) {
             $r = version_compare(VERSION, $m[0]);
-            return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION];
+            return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION, 'file' => $f];
         } else {
-            return !$details ? false : ['result' => -1, 'online' => 'unknow', 'current' => VERSION];
+            return !$details ? false : ['result' => 0, 'online' => 'unknow', 'current' => VERSION, 'file' => null];
         }
     }
 }
