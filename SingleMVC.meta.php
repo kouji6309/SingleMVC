@@ -1,5 +1,5 @@
 <?php
-define('VERSION', '1.19.813');
+define('VERSION', '1.19.911');
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT', '');
 define('HOST', '');

@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.813');
+define('VERSION', '1.19.911');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -153,6 +153,7 @@ class SingleMVC {
             header_404();
         }
         ob_flush();
+        self::$config->auto_update && self::check_for_updates();
     }
 
     /**
@@ -501,10 +502,11 @@ $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return e
      * @return bool|array
      */
     public static function check_for_updates($details = false) {
-        clearstatcache();
+        !self::$config->auto_update && clearstatcache();
         $f = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
         if (preg_match('([\d]\.[\d\.]*[\d])', $f, $m)) {
             $r = version_compare(VERSION, $m[0]);
+            self::$config->auto_update && $r < 0 && file_put_contents(__FRAMEWORK__, $f);
             return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION, 'file' => $f];
         } else {
             return !$details ? false : ['result' => 0, 'online' => 'unknow', 'current' => VERSION, 'file' => null];
@@ -536,6 +538,12 @@ class FrameworkConfig {
      * @var string
      */
     public $lang = null;
+
+    /**
+     * 取得或設定 是否自動更新框架
+     * @var bool
+     */
+    public $auto_update = false;
 }
 
 /**
