@@ -137,6 +137,12 @@ class FrameworkConfig {
      * @var string
      */
     public $lang = null;
+
+    /**
+     * 取得或設定 是否自動更新框架
+     * @var bool
+     */
+    public $auto_update = false;
 }
 
 /**
