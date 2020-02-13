@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.19.911');
+define('VERSION', '1.20.213');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -152,6 +152,7 @@ class SingleMVC {
         } else {
             header_404();
         }
+        header('Content-Length: '.ob_get_length());
         ob_flush();
         self::$config->auto_update && self::check_for_updates();
     }
@@ -380,6 +381,9 @@ $f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return e
             }
         } else {
             header('Content-Type: application/octet-stream');
+            if (strpos($v, '.') !== false) {
+                header('Content-Disposition: attachment; filename='.rawurlencode(str_replace(['\\', '/'], '_', $v)));
+            }
             echo $d ?: '';
         }
         return $flag === true ? ob_get_clean() : null;
