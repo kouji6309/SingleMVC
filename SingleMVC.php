@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.20.218');
+define('VERSION', '1.20.224');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -82,7 +82,7 @@ class SingleMVC {
             !defined('VROOT') && define('VROOT', '');
         }
         !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
-            'http'.(($en = (!empty($_S['HTTPS']) && $_S['HTTPS'] == 'on')) ? 's' : '').'://'.$_S['HTTP_HOST'].
+            'http'.(($en = ($_S['HTTPS'] ?? '') == 'on')) ? 's' : '').'://'.$_S['HTTP_HOST'].
             ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
         if (trim($u, '/') === '') {
             if (count($t = explode('?', $q, 2)) == 2) {
@@ -1114,7 +1114,7 @@ function stopwatch($tag = '') {
  */
 function stopwatch_format($format = []) {
     global $_TIME; $_T = &$_TIME; $f = $format;
-    $r = $f['total']['head'] ?? "Tag\tTime\t\tSplits\tLaps\n";
+    $r = $f['total']['head'] ?? "Tag\tTime\tSplits\tLaps\n";
     foreach ($_T['total'] ?? [] as $t => $d) $r .= sprintf($f['total']['body'] ?? "%s\t%.3f\t%.3f\t%.3f\n", $t, $d['time'], $d['splits'], $d['laps']);
     $r .= ($f['total']['foot'] ?? "\n").($f['block']['head'] ?? "Tag\tCount\tTime\n");
     foreach ($_T['block'] ?? [] as $t => $d) $r .= sprintf($f['block']['body'] ?? "%s\t%.3f\t%.3f\n", $t, $d['count'], $d['time']);
