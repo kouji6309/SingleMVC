@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.20.224');
+define('VERSION', '1.20.303');
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
@@ -53,12 +53,13 @@ class SingleMVC {
         if (!defined('PHPUNIT') && self::$ir++) return;
         session_status() == PHP_SESSION_NONE && session_start(self::$config->session ?: ['read_and_close' => true]);
         // 參數處理
-        $_S = $_SERVER;
-        foreach (['REQUEST_URI', 'SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
+        $_S = $_SERVER; $RU = 'REQUEST_URI';
+        $_S[$RU] = $_S['UNENCODED_URL'] ?? $_S[$RU] ?? $args[$RU] ?? null;
+        foreach (['SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
         // 處理路由
         $co = 'BCBA235AA0401FD10464DF6AFBFAAB77';
-        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S['REQUEST_URI'], '/'.$co) === false) {
-            $_S['REQUEST_URI'] = '/'.$co;
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S[$RU], '/'.$co) === false) {
+            $_S[$RU] = '/'.$co;
         }
         $u = parse_url('http://host'.(function ($s) {
             $s = preg_split('/(?!^)(?=.)/u', $s); $r = '';
@@ -67,7 +68,7 @@ class SingleMVC {
                 $r .= $c;
             }
             return $r;
-        })($_S['REQUEST_URI']));
+        })($_S[$RU]));
         $q = $u['query'] ?? '';
         $u = urldecode($u['path'] ?? '');
         if ($sn = $_S['SCRIPT_NAME'] ?: '') {
@@ -234,8 +235,12 @@ class SingleMVC {
      * @return array|bool
      */
     private static function ccm($c, $m) {
-        $f1 = function ($fc, $fm) { return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]); };
-$f2 = function ($m) { return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1; };
+        $f1 = function ($fc, $fm) {
+            return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]);
+        };
+        $f2 = function ($m) {
+            return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1;
+        };
         if ($f1($c, $rm = ($m.'_'.self::$hm))) {
             return [$c, $rm];
         } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
