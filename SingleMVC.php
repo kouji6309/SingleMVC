@@ -1,20 +1,13 @@
 <?php
 #region SingleMVC
 define('VERSION', '1.20.303');
+header('Framework: SingleMVC '.VERSION);
+ob_start();
 
 if (version_compare(PHP_VERSION, '7.0', '<')) {
     header('Content-Type: text/plain');
     die('Requires PHP 7 or higher');
 }
-
-ob_start();
-
-!defined('DS') && define('DS', DIRECTORY_SEPARATOR);
-!defined('ROOT') && define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
-!defined('SOURCE_DIR') && define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
-!defined('__FRAMEWORK__') && define('__FRAMEWORK__', __FILE__);
-
-header('Framework: SingleMVC '.VERSION);
 
 class SingleMVC {
     /**
@@ -1169,8 +1162,11 @@ function jwt_decode($token, $secret) {
     return false;
 }
 
+!defined('DS') && define('DS', DIRECTORY_SEPARATOR);
+!defined('ROOT') && define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
+!defined('SOURCE_DIR') && define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
+!defined('__FRAMEWORK__') && define('__FRAMEWORK__', __FILE__);
+!defined('PAUSE') && register_shutdown_function(function () { new SingleMVC(); exit(); });
 SingleMVC::$config = new FrameworkConfig();
 SingleMVC::autoload_register();
-
-if (!defined('PAUSE')) register_shutdown_function(function () { new SingleMVC(); exit(); });
 #endregion
