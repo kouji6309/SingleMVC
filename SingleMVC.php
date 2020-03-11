@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.20.303');
+define('VERSION', '1.20.311');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -76,7 +76,7 @@ class SingleMVC {
             !defined('VROOT') && define('VROOT', '');
         }
         !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
-            'http'.(($en = ($_S['HTTPS'] ?? '')) == 'on' ? 's' : '').'://'.$_S['HTTP_HOST'].
+            'http'.(($en = ($_S['HTTPS'] ?? '') == 'on') ? 's' : '').'://'.$_S['HTTP_HOST'].
             ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
         if (trim($u, '/') === '') {
             if (count($t = explode('?', $q, 2)) == 2) {
