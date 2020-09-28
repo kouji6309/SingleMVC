@@ -9,6 +9,7 @@ if (version_compare(PHP_VERSION, '7.0', '<')) {
     die('Requires PHP 7 or higher');
 }
 
+/** 框架主體 */
 class SingleMVC {
     /**
      * 取得或設定程式組態
@@ -39,9 +40,7 @@ class SingleMVC {
     private static $ld = '';
     private static $am = ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'];
 
-    /**
-     * 產生 SingleMVC 實例並執行
-     */
+    /** 產生 SingleMVC 實例並執行 */
     public function __construct($args = []) {
         if (!defined('PHPUNIT') && self::$ir++) return;
         session_status() == PHP_SESSION_NONE && session_start(self::$config->session ?: ['read_and_close' => true]);
@@ -331,7 +330,7 @@ class SingleMVC {
     }
 
     /**
-     * 輸出 View
+     * 輸出資料至緩衝區
      * @param string $view View 名稱
      * @param mixed $data 資料
      * @param mixed $flag 附加選項
@@ -448,7 +447,7 @@ class SingleMVC {
     }
 
     /**
-     * 讀取語系
+     * 載入指定的語系
      * @param string $lang 語系名稱
      * @param string $now 目前的語系名稱
      * @return bool
@@ -499,7 +498,7 @@ class SingleMVC {
     }
 
     /**
-     * 檢查是否有新版框架
+     * 檢查 SingleMVC 更新
      * @param bool $details 是否取得詳細資料
      * @return bool|array
      */
@@ -516,6 +515,7 @@ class SingleMVC {
     }
 }
 
+/** 設定 */
 class FrameworkConfig {
     /**
      * 取得或設定 會話設定
@@ -548,16 +548,12 @@ class FrameworkConfig {
     public $auto_update = false;
 }
 
-/**
- * Controller 基底類別
- */
+/** 控制器基底 */
 abstract class Controller {
     public function __construct() { }
 }
 
-/**
- * Model 基底類別
- */
+/** 模組基底 */
 abstract class Model {
     public function __construct() { }
 
@@ -938,9 +934,7 @@ class BCBA235AA0401FD10464DF6AFBFAAB77 extends Controller {
     }
 }
 
-/**
- * 設定狀態 404
- */
+/** 設定 HTTP/1.1 404 的狀態碼 */
 function header_404() {
     http_response_code(404);
 }
@@ -956,7 +950,7 @@ function input($key = null, $type = null) {
 }
 
 /**
- * 輸出 View
+ * 輸出資料至緩衝區
  * @param string $view View 名稱
  * @param mixed $data 資料
  * @param mixed $flag 附加選項
@@ -967,7 +961,7 @@ function output($view, $data = [], $flag = false) {
 }
 
 /**
- * 取得或設定 session
+ * 取得或設定 Session
  * @param string|array $key 索引
  * @param mixed $value 數值
  * @return mixed
@@ -977,7 +971,7 @@ function session($key, $value = null) {
 }
 
 /**
- * 取得或設定 cookie
+ * 取得或設定 Cookie
  * @param string|array $key 索引
  * @param mixed $value 數值
  * @param int|array $expires 逾時時間/選項
@@ -1001,7 +995,7 @@ function lang($key = '') {
 }
 
 /**
- * 讀取語系
+ * 載入指定的語系
  * @param string $lang 語系名稱
  * @param string $now 目前的語系名稱
  * @return bool
@@ -1102,7 +1096,7 @@ function stopwatch($tag = '') {
 }
 
 /**
- * 依格式輸出時間
+ * 格式化輸出儲存於 $_TIME 中的時間紀錄
  * @param array $format 輸出格式
  * $format = [
  *     'total' => ['head' => '...', 'body' => '...', 'foot' => '...'],
@@ -1120,7 +1114,7 @@ function stopwatch_format($format = []) {
 }
 
 /**
- * 檢查是否有新版框架
+ * 檢查 SingleMVC 更新
  * @param bool $details 是否取得詳細資料
  * @return bool|array
  */
@@ -1129,7 +1123,7 @@ function check_for_updates($details = false) {
 }
 
 /**
- * JWT 編碼
+ * JSON Web Token 編碼
  * @param mixed $data 資料
  * @param string $secret 密鑰
  * @return string
@@ -1142,7 +1136,7 @@ function jwt_encode($data, $secret) {
 }
 
 /**
- * JWT 解碼與驗證
+ * JSON Web Token 解碼
  * @param string $token TOKEN內容
  * @param string $secret 密鑰
  * @return mixed
