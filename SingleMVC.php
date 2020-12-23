@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.20.311');
+define('VERSION', '1.20.1223');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -50,7 +50,7 @@ class SingleMVC {
         foreach (['SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
         // 處理路由
         $co = 'BCBA235AA0401FD10464DF6AFBFAAB77';
-        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && strpos($_S[$RU], '/'.$co) === false) {
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !str_contains($_S[$RU], '/'.$co)) {
             $_S[$RU] = '/'.$co;
         }
         $u = parse_url('http://host'.(function ($s) {
@@ -66,9 +66,9 @@ class SingleMVC {
         if ($sn = $_S['SCRIPT_NAME'] ?: '') {
             $sd = dirname($sn);
             !defined('VROOT') && define('VROOT', rtrim(str_replace(DS, '/', $sd), '/'));
-            if (mb_strpos($u, $sn) === 0) {
+            if (str_starts_with($u, $sn)) {
                 $u = mb_substr($u, mb_strlen($sn));
-            } elseif (mb_strpos($u, $sd) === 0) {
+            } elseif (str_starts_with($u, $sd)) {
                 $u = mb_substr($u, mb_strlen($sd));
             }
         } else {
@@ -84,7 +84,7 @@ class SingleMVC {
         }
         $u = trim($u, '/');
         mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
-        if (($r = self::$config->routes ?? null) && is_array($r) && strpos($u, $co) === false) {
+        if (($r = self::$config->routes ?? null) && is_array($r) && !str_contains($u, $co)) {
             foreach ($r as $k => $v) {
                 $k = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $k);
                 if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
@@ -141,7 +141,7 @@ class SingleMVC {
         }
         // 執行
         if ($crp = self::cmp(explode('/', trim($u, '/')), 'default')) {
-            call_user_func_array([new $crp['c'](), $crp['m']], $crp['p']);
+            call_user_func_array([$crp['c'], $crp['m']], $crp['p']);
         } else {
             header_404();
         }
@@ -166,7 +166,7 @@ class SingleMVC {
         // 自動載入 與 Composer
         spl_autoload_register(function ($c) {
             $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
-            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && strpos($c, '\\') === false) {
+            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && !str_contains($c, '\\')) {
                 if (self::$fs == null) {
                     self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
                         if (file_exists($p) && is_dir($p)) {
@@ -178,7 +178,7 @@ class SingleMVC {
                     };
                     foreach ($fs as $f) $f1($f);
                 }
-                foreach (self::$fs as $i) { if (ends_with($i, DS.$c.'.php') && self::require($i)) break; }
+                foreach (self::$fs as $i) { if (str_ends_with($i, DS.$c.'.php') && self::require($i)) break; }
             }
         });
         self::require(ROOT.DS.'vendor'.DS.'autoload.php');
@@ -227,15 +227,14 @@ class SingleMVC {
      * @return array|bool
      */
     private static function ccm($c, $m) {
-        $f1 = function ($fc, $fm) {
-            return class_exists($fc) && is_subclass_of($fc, 'Controller') && is_callable([$fc, $fm]);
-        };
-        $f2 = function ($m) {
-            return array_sum(array_map(function($v) use($m) { return ends_with($m, '_'.$v) ? 1 : 0; }, self::$am)) == 1;
-        };
-        if ($f1($c, $rm = ($m.'_'.self::$hm))) {
+        if (!class_exists($c) || !is_subclass_of($c, 'Controller')) return false;
+        $c = new $c();
+
+        if (is_callable([$c, $rm = ($m.'_'.self::$hm)])) {
             return [$c, $rm];
-        } elseif (self::$hm == 'get' && !$f2($m) && $f1($c, $m)) {
+        } elseif (self::$hm == 'get' && array_sum(array_map(function($v) use($m) {
+            return str_ends_with($m, '_'.$v) ? 1 : 0;
+        }, self::$am)) !== 1 && is_callable([$c, $m])) {
             return [$c, $m];
         }
         return false;
@@ -286,7 +285,7 @@ class SingleMVC {
      * @return string|bool
      */
     public static function require_check($file) {
-        if (!ends_with($f = $file, '.php')) $f .= '.php';
+        if (!str_ends_with($f = $file, '.php')) $f .= '.php';
         $f = str_replace(['\\', '/'], DS, $f);
         return file_exists($f) && is_resource($h = @fopen($f, 'r')) && fclose($h) ? $f : false;
     }
@@ -378,7 +377,7 @@ class SingleMVC {
             }
         } else {
             header('Content-Type: application/octet-stream');
-            if (strpos($v, '.') !== false) {
+            if (str_contains($v, '.')) {
                 header('Content-Disposition: attachment; filename='.rawurlencode(str_replace(['\\', '/'], '_', $v)));
             }
             echo $d ?: '';
@@ -750,7 +749,7 @@ abstract class Model {
      * @param mixed $data 資料
      * @param array $option 選項
      * @param bool $get_header 是否傳回 Header
-     * @return string|array|bool
+     * @return string|array|false
      */
     protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
         $chs = self::request_async($url, $method, $data, $option);
@@ -763,14 +762,9 @@ abstract class Model {
      * @param string $method 請求方法
      * @param mixed $data 資料
      * @param array $option 選項
-     * @return resource|bool
+     * @return CurlHandle|false
      */
     protected static function request_async($url, $method = 'get', $data = [], $option = []) {
-        //if (is_array($ob = $url)) {
-        //    $url = $ob['url'] ?? ''; $method = $ob['method'] ?? $ob['type'] ?? 'get';
-        //    $data = $ob['data'] ?? []; $option = []; $option['Header'] = $ob['headers'] ?? [];
-        //    if (!empty($ob['contentType'])) $option['Header']['Content-Type'] = $ob['contentType'];
-        //}
         $ch = curl_init();
         $m = strtoupper($method); $u = $url; $d = $data; $o = $option;
         if (!$ch || !$u || !$m) return false;
@@ -779,21 +773,21 @@ abstract class Model {
             if (!curl_setopt_array($ch, $oo)) return false;
         }
         if ($m == 'GET') {
-            if (!curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d))) return false;
+            if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d))) return false;
         } else {
             if (is_array($d) && isset($d['_GET'])) {
-                if (!curl_setopt($ch, CURLOPT_URL, $u.(strpos($u, '?') === false ? '?' : '&').http_build_query($d['_GET']))) return false;
+                if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d['_GET']))) return false;
                 unset($d['_GET']);
             } else {
                 if (!curl_setopt($ch, CURLOPT_URL, $u)) return false;
             }
             if (!curl_setopt($ch, CURLOPT_POST, true)) return false;
             $hct = ($ct = '1') && (!empty($o['Header']['Content-Type']) && is_string($ct = $o['Header']['Content-Type']));
-            if ((($ia = is_array($d)) && !$hct) || ($ia && starts_with($ct, 'application/x-www-form-urlencoded'))) {
+            if ((($ia = is_array($d)) && !$hct) || ($ia && str_starts_with($ct, 'application/x-www-form-urlencoded'))) {
                 if (!curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($d))) return false;
-            } elseif ($ia && $hct && starts_with($ct, 'multipart/form-data')) {
+            } elseif ($ia && $hct && str_starts_with($ct, 'multipart/form-data')) {
                 if (!curl_setopt($ch, CURLOPT_POSTFIELDS, $d)) return false;
-            } elseif ($hct && starts_with($ct, 'application/json')) {
+            } elseif ($hct && str_starts_with($ct, 'application/json')) {
                 if (!curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d))) return false;
             } elseif (is_string($d)) {
                 if (!$hct) $o['Header']['Content-Type'] = 'text/plain';
@@ -834,11 +828,18 @@ abstract class Model {
      * @param int $start 開始索引
      * @param int $length 長度
      * @param bool $get_header 是否傳回 Header
-     * @return string|array|bool
+     * @return string|array|false
      */
     protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
+        $ck = function($o) {
+            if (version_compare(PHP_VERSION, '8.0', '<')) {
+                return gettype($o) === 'resource' && get_resource_type($o) === 'curl';
+            } else {
+                return $o instanceof CurlHandle;
+            }
+        };
         $n = 'request'; $one = false;
-        if (gettype($rs) == 'resource' && get_resource_type($rs) == 'curl') {
+        if ($ck($rs)) {
             $rs = [$rs]; $start = 0; $length = -1; $one = true;
         } elseif (gettype($rs) != 'array') {
             return false;
@@ -847,10 +848,12 @@ abstract class Model {
         if (($l = $length) < 0 || ($s + $l) > count($rs)) $l = count($rs) - $s;
         $e = $s + $l;
         $cb = false;
-        if (gettype($rs[$s][$n]) == 'resource' && get_resource_type($rs[$s][$n]) == 'curl') {
-            $cb = true;
-        } elseif (gettype($rs[$s]) != 'resource' || get_resource_type($rs[$s]) != 'curl') {
-            return [];
+        if (!$ck($rs[$s])) {
+            if ($ck($rs[$s][$n])) {
+                $cb = true;
+            } else {
+                return [];
+            }
         }
         $mh = curl_multi_init();
         for ($i = $s; $i < $e; $i++) {
@@ -1004,6 +1007,38 @@ function lang_load($lang = '', &$now = null) {
     return SingleMVC::lang_load($lang, $now);
 }
 
+if (version_compare(PHP_VERSION, '8.0', '<')) {
+    /**
+     * 檢查字串是否包含特定字串
+     * @param string $haystack 字串
+     * @param string $needle 特定字串
+     * @return bool
+     */
+    function str_contains($haystack, $needle) {
+        return strpos($haystack, $needle) !== false;
+    }
+
+    /**
+     * 檢查字串是否以特定字串開頭
+     * @param string $haystack 字串
+     * @param string $needle 特定字串
+     * @return bool
+     */
+    function str_starts_with($haystack, $needle) {
+        return substr($haystack, 0, strlen($n = $needle)) === $n;
+    }
+
+    /**
+     * 檢查字串是否以特定字串結尾
+     * @param string $haystack 字串
+     * @param string $needle 特定字串
+     * @return bool
+     */
+    function str_ends_with($haystack, $needle) {
+        return !($l = strlen($n = $needle)) || (substr($haystack, -$l) === $n);
+    }
+}
+
 /**
  * 檢查字串是否以特定字串開頭
  * @param string $haystack 字串
@@ -1011,7 +1046,8 @@ function lang_load($lang = '', &$now = null) {
  * @return bool
  */
 function starts_with($haystack, $needle) {
-    return substr($haystack, 0, strlen($n = $needle)) === $n;
+    trigger_error('Deprecated: The starts_with() function is deprecated', E_USER_DEPRECATED);
+    return str_starts_with($haystack, $needle);
 }
 
 /**
@@ -1021,7 +1057,8 @@ function starts_with($haystack, $needle) {
  * @return bool
  */
 function ends_with($haystack, $needle) {
-    return !($l = strlen($n = $needle)) || (substr($haystack, -$l) === $n);
+    trigger_error('Deprecated: The ends_with() function is deprecated', E_USER_DEPRECATED);
+    return str_ends_with($haystack, $needle);
 }
 
 /**
