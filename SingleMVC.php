@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.20.1223');
+define('VERSION', '1.21.105');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -352,36 +352,39 @@ class SingleMVC {
             self::$pd[] = $d;
             foreach (self::$pd as $d) extract($d);
             require $vp;
-        } elseif ($v == 'json') {
-            header('Content-Type: application/json');
-            echo json_encode($d);
-        } elseif ($v == 'html') {
-            header('Content-Type: text/html; charset=utf-8');
-            echo $d ?: '';
-        } elseif ($v == 'text') {
-            header('Content-Type: text/plain; charset=utf-8');
-            echo $d ?: '';
-        } elseif ($v == 'jpeg') {
-            header('Content-Type: image/jpeg');
-            if (is_string($d)) {
-                echo $d ?: '';
-            } elseif (is_resource($d)) {
-                imagejpeg($d);
-            }
-        } elseif ($v == 'png') {
-            header('Content-Type: image/png');
-            if (is_string($d)) {
-                echo $d ?: '';
-            } elseif (is_resource($d)) {
-                imagepng($d);
-            }
         } else {
-            header('Content-Type: application/octet-stream');
-            if (str_contains($v, '.')) {
+            if ($scd = str_contains($v, '.')) {
                 header('Content-Disposition: attachment; filename='.rawurlencode(str_replace(['\\', '/'], '_', $v)));
             }
-            echo $d ?: '';
+            if (str_ends_with($v, 'json')) {
+                header('Content-Type: application/json');
+                echo json_encode($d);
+            } elseif (str_ends_with($v, 'html') || str_ends_with($v, 'htm')) {
+                header('Content-Type: text/html; charset=utf-8');
+                echo $d ?: '';
+            } elseif ($v == 'text' || str_ends_with($v, 'txt')) {
+                header('Content-Type: text/plain; charset=utf-8');
+                echo $d ?: '';
+            } elseif (str_ends_with($v, 'jpeg') || str_ends_with($v, 'jpg')) {
+                header('Content-Type: image/jpeg');
+                if (is_string($d)) {
+                    echo $d ?: '';
+                } elseif (is_resource($d)) {
+                    imagejpeg($d);
+                }
+            } elseif (str_ends_with($v, 'png')) {
+                header('Content-Type: image/png');
+                if (is_string($d)) {
+                    echo $d ?: '';
+                } elseif (is_resource($d)) {
+                    imagepng($d);
+                }
+            } elseif ($scd) {
+                header('Content-Type: application/octet-stream');
+                echo $d ?: '';
+            }
         }
+
         return $flag === true ? ob_get_clean() : null;
     }
 
