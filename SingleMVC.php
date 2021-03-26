@@ -1,13 +1,8 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.21.105');
+define('VERSION', '1.21.327');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
-
-if (version_compare(PHP_VERSION, '7.0', '<')) {
-    header('Content-Type: text/plain');
-    die('Requires PHP 7 or higher');
-}
 
 /** 框架主體 */
 class SingleMVC {
@@ -582,7 +577,7 @@ abstract class Model {
      * 取得或設定 PDO 物件
      * @var PDO
      */
-    protected static $db_pdo = null;
+    protected $db_pdo = null;
 
     /**
      * 取得或設定 最後的 PDO 敘述
@@ -590,23 +585,42 @@ abstract class Model {
      */
     protected $db_statement = null;
 
+    private static $db_pdo_index = [];
+    private static $db_pdo_list = [];
+
     /**
      * 連線 SQL 資料庫
+     * @param array $config PDO 連線參數
      * @return bool
      */
-    protected function db_connect() {
+    protected function db_connect($config = null) {
         try {
-            if (self::$db_pdo == null) {
-                $c = SingleMVC::$config;
-                self::$db_pdo = new PDO(
-                    'mysql:host='.($c->db['host'] ?? 'localhost').(!empty($c->db['name']) ? ';dbname='.$c->db['name'] : '').';charset=utf8mb4',
-                    $c->db['username'] ?? 'root', $c->db['password'] ?? '',
-                    [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4', PDO::ATTR_EMULATE_PREPARES => false]
-                );
+            if ($this->db_pdo == null) {
+                $c = $config;
+                if (empty($c['dsn'])) {
+                    $dc = SingleMVC::$config->db;
+                    if (!empty($dc['dsn'])) {
+                        $c = $dc;
+                    } else {
+                        // trigger_error('Deprecated: The database config structure is deprecated', E_USER_DEPRECATED);
+                        $c = [
+                            'dsn' => 'mysql:host='.($dc['host'] ?? 'localhost').(!empty($dc['name']) ? ';dbname='.$dc['name'] : '').';charset=utf8mb4',
+                            'username' => $dc['username'] ?? 'root',
+                            'password' => $dc['password'] ?? '',
+                            'options' => [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4', PDO::ATTR_EMULATE_PREPARES => false],
+                        ];
+                    }
+                }
+                if (($i = array_search($c, self::$db_pdo_index)) === false) {
+                    $i = count(self::$db_pdo_list);
+                    self::$db_pdo_list[] = new PDO($c['dsn'], $c['username'], $c['password'], $c['options']);
+                    self::$db_pdo_index[] = $c;
+                }
+                $this->db_pdo = &self::$db_pdo_list[$i];
             }
         }
         catch (Exception $ex) { }
-        return self::$db_pdo != null;
+        return $this->db_pdo != null;
     }
 
     /**
@@ -615,7 +629,7 @@ abstract class Model {
      * @return PDOStatement|bool
      */
     protected function db_query($statement) {
-        if ($this->db_connect()) return $this->db_statement = self::$db_pdo->query($statement);
+        if ($this->db_connect()) return $this->db_statement = $this->db_pdo->query($statement);
         return false;
     }
 
@@ -625,7 +639,7 @@ abstract class Model {
      * @return PDOStatement|bool
      */
     protected function db_prepare($statement) {
-        if ($this->db_connect()) return $this->db_statement = self::$db_pdo->prepare($statement);
+        if ($this->db_connect()) return $this->db_statement = $this->db_pdo->prepare($statement);
         return false;
     }
 
@@ -636,7 +650,7 @@ abstract class Model {
     protected function db_insert() {
         if (($s = $this->db_statement) && $s->execute()) {
             $c = $s->rowCount();
-            $l = self::$db_pdo->lastInsertId();
+            $l = $this->db_pdo->lastInsertId();
             if ($c == 1) {
                 return $l ?: $c;
             } else {
@@ -710,7 +724,7 @@ abstract class Model {
      * @return bool
      */
     protected function db_begin() {
-        if ($this->db_connect()) return self::$db_pdo->beginTransaction();
+        if ($this->db_connect()) return $this->db_pdo->beginTransaction();
         return false;
     }
 
@@ -719,7 +733,7 @@ abstract class Model {
      * @return bool
      */
     protected function db_commit() {
-        if ($this->db_connect()) return self::$db_pdo->commit();
+        if ($this->db_connect()) return $this->db_pdo->commit();
         return false;
     }
 
@@ -728,7 +742,7 @@ abstract class Model {
      * @return bool
      */
     protected function db_rollBack() {
-        if ($this->db_connect()) return self::$db_pdo->rollBack();
+        if ($this->db_connect()) return $this->db_pdo->rollBack();
         return false;
     }
 
@@ -750,12 +764,12 @@ abstract class Model {
      * @param string $url 請求路徑
      * @param string $method 請求方法
      * @param mixed $data 資料
-     * @param array $option 選項
+     * @param array $options 選項
      * @param bool $get_header 是否傳回 Header
      * @return string|array|false
      */
-    protected static function request($url, $method = 'get', $data = [], $option = [], $get_header = false) {
-        $chs = self::request_async($url, $method, $data, $option);
+    protected static function request($url, $method = 'get', $data = [], $options = [], $get_header = false) {
+        $chs = self::request_async($url, $method, $data, $options);
         return self::request_run($chs, 0, -1, $get_header);
     }
 
@@ -764,15 +778,15 @@ abstract class Model {
      * @param string $url 請求路徑
      * @param string $method 請求方法
      * @param mixed $data 資料
-     * @param array $option 選項
+     * @param array $options 選項
      * @return CurlHandle|false
      */
-    protected static function request_async($url, $method = 'get', $data = [], $option = []) {
+    protected static function request_async($url, $method = 'get', $data = [], $options = []) {
         $ch = curl_init();
-        $m = strtoupper($method); $u = $url; $d = $data; $o = $option;
+        $m = strtoupper($method); $u = $url; $d = $data; $o = $options;
         if (!$ch || !$u || !$m) return false;
         if (!curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m)) return false;
-        if (!empty($option['Option']) && is_array($oo = $o['Option'])) {
+        if (!empty($o['Option']) && is_array($oo = $o['Option'])) {
             if (!curl_setopt_array($ch, $oo)) return false;
         }
         if ($m == 'GET') {
