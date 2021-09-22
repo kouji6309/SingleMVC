@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.21.327');
+define('VERSION', '1.21.922');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -790,7 +790,7 @@ abstract class Model {
             if (!curl_setopt_array($ch, $oo)) return false;
         }
         if ($m == 'GET') {
-            if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d))) return false;
+            if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d ?: []))) return false;
         } else {
             if (is_array($d) && isset($d['_GET'])) {
                 if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d['_GET']))) return false;
