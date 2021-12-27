@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.21.922');
+define('VERSION', '1.21.1227');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -353,7 +353,7 @@ class SingleMVC {
             }
             if (str_ends_with($v, 'json')) {
                 header('Content-Type: application/json');
-                echo json_encode($d);
+                echo json_encode($d, JSON_UNESCAPED_UNICODE);
             } elseif (str_ends_with($v, 'html') || str_ends_with($v, 'htm')) {
                 header('Content-Type: text/html; charset=utf-8');
                 echo $d ?: '';
