@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.21.1227');
+define('VERSION', '1.22.1004');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -24,119 +24,187 @@ class SingleMVC {
      */
     public static $view = [];
 
-    private static $ir = 0;
-    private static $hl = 0;
-    private static $fs = null;
-    private static $hm = 'get';
-    private static $ud = [];
-    private static $cd = [];
-    private static $fd = [];
-    private static $pd = [];
-    private static $ld = '';
-    private static $am = ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'];
+    private static $is_ran = false;
+    private static $is_loaded = false;
+    private static $file_list = null;
+    private static $method = 'get';
+    private static $uri_data = [];
+    private static $content_data = [];
+    private static $file_data = [];
+    private static $page_data = [];
+    private static $loaded_lang = '';
+    private static $allowed_method = ['post', 'put', 'delete', 'head', 'connect', 'options', 'patch'];
 
     /** 產生 SingleMVC 實例並執行 */
     public function __construct($args = []) {
-        if (!defined('PHPUNIT') && self::$ir++) return;
-        session_status() == PHP_SESSION_NONE && session_start(self::$config->session ?: ['read_and_close' => true]);
-        // 參數處理
-        $_S = $_SERVER; $RU = 'REQUEST_URI';
-        $_S[$RU] = $_S['UNENCODED_URL'] ?? $_S[$RU] ?? $args[$RU] ?? null;
-        foreach (['SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $k) $_S[$k] = $args[$k] ?? $_S[$k] ?? null;
-        // 處理路由
-        $co = 'BCBA235AA0401FD10464DF6AFBFAAB77';
-        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !str_contains($_S[$RU], '/'.$co)) {
-            $_S[$RU] = '/'.$co;
+        // 檢查是否為單元測試
+        if (!defined('PHPUNIT') && self::$is_ran) {
+            return;
         }
-        $u = parse_url('http://host'.(function ($s) {
-            $s = preg_split('/(?!^)(?=.)/u', $s); $r = '';
-            foreach ($s as $c) {
-                if (strlen($c) > 1) $c = urlencode($c);
-                $r .= $c;
+        self::$is_ran = true;
+
+        // 開始工作階段
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start(self::$config->session ?: ['read_and_close' => true]);
+        }
+
+        // 參數處理
+        $_SERVER['REQUEST_URI'] = $_SERVER['UNENCODED_URL'] ?? $_SERVER['REQUEST_URI'] ?? $args['REQUEST_URI'] ?? null;
+        foreach (['SCRIPT_NAME', 'CONTENT_TYPE', 'REQUEST_METHOD'] as $key) {
+            $_SERVER[$key] = $args[$key] ?? $_SERVER[$key] ?? null;
+        }
+
+        // 檢查 Composser 路由
+        $composser_class = 'BCBA235AA0401FD10464DF6AFBFAAB77';
+        if (!BCBA235AA0401FD10464DF6AFBFAAB77::check() && !str_contains($_SERVER['REQUEST_URI'], '/'.$composser_class)) {
+            $_SERVER['REQUEST_URI'] = '/'.$composser_class;
+        }
+
+        // 解析網址，處理編碼
+        $url = parse_url('http://host'.(function ($uri) {
+            $uri = preg_split('/(?!^)(?=.)/u', $uri);
+            $result = '';
+            foreach ($uri as $part) {
+                if (strlen($part) > 1) {
+                    $part = urlencode($part);
+                }
+                $result .= $part;
             }
-            return $r;
-        })($_S[$RU]));
-        $q = $u['query'] ?? '';
-        $u = urldecode($u['path'] ?? '');
-        if ($sn = $_S['SCRIPT_NAME'] ?: '') {
-            $sd = dirname($sn);
-            !defined('VROOT') && define('VROOT', rtrim(str_replace(DS, '/', $sd), '/'));
-            if (str_starts_with($u, $sn)) {
-                $u = mb_substr($u, mb_strlen($sn));
-            } elseif (str_starts_with($u, $sd)) {
-                $u = mb_substr($u, mb_strlen($sd));
+            return $result;
+        })($_SERVER['REQUEST_URI']));
+
+        // 解析虛擬目錄
+        $query = $url['query'] ?? '';
+        $url = urldecode($url['path'] ?? '');
+        if ($_SERVER['SCRIPT_NAME'] ?: '') {
+            $script_dir = dirname($_SERVER['SCRIPT_NAME']);
+            !defined('VROOT') && define('VROOT', rtrim(str_replace(DS, '/', $script_dir), '/'));
+            if (str_starts_with($url, $_SERVER['SCRIPT_NAME'])) {
+                $url = mb_substr($url, mb_strlen($_SERVER['SCRIPT_NAME']));
+            } elseif (str_starts_with($url, $script_dir)) {
+                $url = mb_substr($url, mb_strlen($script_dir));
             }
         } else {
             !defined('VROOT') && define('VROOT', '');
         }
-        !defined('HOST') && define('HOST', defined('PHPUNIT') ? 'http://localhost' :
-            'http'.(($en = ($_S['HTTPS'] ?? '') == 'on') ? 's' : '').'://'.$_S['HTTP_HOST'].
-            ((($sp = $_S['SERVER_PORT']) != '443' && $en) || (!$en && $sp != '80') ? $sp : ''));
-        if (trim($u, '/') === '') {
-            if (count($t = explode('?', $q, 2)) == 2) {
-                list($u, $q) = $t;
+
+        // 解析主機
+        if (!defined('HOST')) {
+            if (defined('PHPUNIT')) {
+                define('HOST', 'http://localhost');
+            } else {
+                $server_post = $_SERVER['SERVER_PORT'];
+                $scheme = 'http'.(($_SERVER['HTTPS'] ?? '') == 'on' ? 's' : '');
+                if (($scheme == 'https' && $server_post == '443') || ($scheme == 'http' && $server_post == '80')) {
+                    // 預設埠不顯示
+                    $server_post = '';
+                } else {
+                    $server_post = ':'.$server_post;
+                }
+                define('HOST', $scheme.'://'.$_SERVER['HTTP_HOST'].$server_post);
             }
         }
-        $u = trim($u, '/');
-        mb_parse_str($_S['QUERY_STRING'] = $q, $_GET);
-        if (($r = self::$config->routes ?? null) && is_array($r) && !str_contains($u, $co)) {
-            foreach ($r as $k => $v) {
-                $k = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $k);
-                if ($k != 'default' && $k != '404' && preg_match($k = '#^'.$k.'$#', $u)) {
-                    $u = preg_replace($k, $v, $u); break;
+
+        // 解析查詢字串
+        if (trim($url, '/') === '') {
+            $querys = explode('?', $query, 2);
+            if (count($querys) == 2) {
+                list($url, $query) = $querys;
+            }
+        }
+        $url = trim($url, '/');
+        mb_parse_str($_SERVER['QUERY_STRING'] = $query, $_GET);
+
+        // 複寫路由
+        $routes = self::$config->routes ?? null;
+        if ($routes && is_array($routes) && !str_contains($url, $composser_class)) {
+            foreach ($routes as $key => $route) {
+                $key = str_replace(array(':any', ':num'), array('[^/]+', '[0-9]+'), $key);
+                if ($key != 'default' && $key != '404' && preg_match($key = '#^'.$key.'$#', $url)) {
+                    $url = preg_replace($key, $route, $url);
+                    break;
                 }
             }
         }
+
         // 處理輸入
-        self::$ud = $_GET;
+        self::$uri_data = $_GET;
+        self::$method = strtolower($_SERVER['REQUEST_METHOD'] ?? 'get');
         $raw = $args['php://input'] ?? file_get_contents('php://input');
-        $ct = strtolower(explode(';', $_S['CONTENT_TYPE'] ?? 'text/plain')[0]);
-        self::$hm = $hm = strtolower($_S['REQUEST_METHOD'] ?? 'get');
-        if (($ip = $hm == 'post') && $ct == 'application/x-www-form-urlencoded') {
-            self::$cd = $args['$_POST'] ?? $_POST;
-        } elseif (!($ig = $hm == 'get') && $ct == 'application/x-www-form-urlencoded') {
-            mb_parse_str($raw, $tp1);
-            self::$cd = $tp1;
-        } elseif ($ip && $ct == 'multipart/form-data') {
-            self::$cd = $args['$_POST'] ?? $_POST;
-            self::$fd = $args['$_FILES'] ?? $_FILES;
-        } elseif (!$ip && $ct == 'multipart/form-data') {
-            $tp1 = ['c' => [], 'f' => []];
-            preg_match('/boundary=(.*)$/', $_S['CONTENT_TYPE'], $b);
-            if (count($b) > 0) {
-                $b = preg_split('/-+'.$b[1].'/', $raw);
-                array_pop($b);
-                foreach($b as $i) {
-                    if (empty($i = ltrim($i))) continue;
-                    $bk = $d = $ks = [];
-                    if (preg_match('/^Content-Disposition: .*; name=\"([^\"]*)\"; filename=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $i, $m)) {
-                        preg_match('/Content-Type: (.*)?/', $m[3], $t);
-                        $p = sys_get_temp_dir().DS.'php'.substr(sha1(random_bytes(10)), 0, 6);
-                        $e = file_put_contents($p, preg_replace('/Content-Type: (.*)[^\n\r]/', '', $m[3]));
-                        mb_parse_str(urlencode($m[1]).'=temp', $tp2);
-                        while (is_array($tp2 = $tp2[$ks[] = key($tp2)]));
-                        $ks = array_reverse($ks);
-                        $id = array_pop($ks);
-                        $tp2 = ['name' => $m[2], 'type' => trim($t[1]), 'tmp_name' => $p, 'error' => ($e === FALSE) ? $e : 0, 'size'=> filesize($p)];
-                        foreach ($tp2 as $l => $v) { $d[$id][$l] = $v; foreach ($ks as $k) $d[$id][$l] = [$k => $d[$id][$l]]; }
-                        $bk = ['f' => $d];
-                    } elseif (preg_match('/^Content-Disposition: .*; name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $i, $m)) {
-                        mb_parse_str(urlencode($m[1]).'='.urlencode($m[2]), $tp2);
-                        $bk = ['c' => $tp2];
+        $content_type = strtolower(explode(';', $_SERVER['CONTENT_TYPE'] ?? 'text/plain')[0]);
+        $is_post = self::$method == 'post';
+        $is_get = self::$method == 'get';
+        if ($is_post && $content_type == 'application/x-www-form-urlencoded') {
+            self::$content_data = $args['$_POST'] ?? $_POST;
+        } elseif (!$is_get && $content_type == 'application/x-www-form-urlencoded') {
+            mb_parse_str($raw, $temp);
+            self::$content_data = $temp;
+        } elseif ($is_post && $content_type == 'multipart/form-data') {
+            self::$content_data = $args['$_POST'] ?? $_POST;
+            self::$file_data = $args['$_FILES'] ?? $_FILES;
+        } elseif (!$is_post && $content_type == 'multipart/form-data') {
+            $form_content = ['field' => [], 'file' => []];
+            preg_match('/boundary=(.*)$/', $_SERVER['CONTENT_TYPE'], $boundary);
+            if (count($boundary) > 0) {
+                // 用邊界分割
+                $blocks = preg_split('/-+'.$boundary[0].'/', $raw);
+                array_pop($blocks);
+                foreach($blocks as $block) {
+                    $block = ltrim($block);
+                    if (empty($block)) {
+                        continue;
                     }
-                    $tp1 = array_merge_recursive($tp1, $bk);
+                    $block_content = [];
+                    $key_list = [];
+                    // 檢查參數種類
+                    if (preg_match('/^Content-Disposition: .*; name=\"([^\"]*)\"; filename=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $split_content)) {
+                        // 處理檔案
+                        preg_match('/Content-Type: (.*)?/', $split_content[3], $split_content_type);
+                        $tmp_path = sys_get_temp_dir().DS.'php'.substr(sha1(random_bytes(10)), 0, 6);
+                        $save_result = file_put_contents($tmp_path, preg_replace('/Content-Type: (.*)[^\n\r]/', '', $split_content[3]));
+                        // 解析巢狀索引
+                        mb_parse_str(urlencode($split_content[1]).'=temp', $parsed_str);
+                        while (is_array($parsed_str = $parsed_str[$key_list[] = key($parsed_str)]));
+                        $key_list = array_reverse($key_list);
+                        // 取主要參數名稱
+                        $id = array_pop($key_list);
+                        $file_data = [];
+                        foreach ([
+                            'name' => $split_content[2],
+                            'type' => trim($split_content_type[1]),
+                            'tmp_name' => $tmp_path,
+                            'error' => ($save_result === FALSE) ? $save_result : 0,
+                            'size'=> filesize($tmp_path)
+                        ] as $key => $val) {
+                            $file_data[$id][$key] = $val;
+                            // 重組巢狀索引
+                            foreach ($key_list as $k) {
+                                $file_data[$id][$key] = [$k => $file_data[$id][$key]];
+                            }
+                        }
+                        $block_content = ['file' => $file_data];
+                    } elseif (preg_match('/^Content-Disposition: .*; name=\"([^\"]*)\"[\n|\r]+([^\n\r].*)?\r$/s', $block, $split_content)) {
+                        // 處理欄位
+                        mb_parse_str(urlencode($split_content[1]).'='.urlencode($split_content[2]), $parsed_str);
+                        $block_content = ['field' => $parsed_str];
+                    }
+                    $form_content = array_merge_recursive($form_content, $block_content);
                 }
             }
-            self::$cd = $tp1['c'];
-            self::$fd = $tp1['f'];
-        } elseif (!$ig && $ct == 'application/json') {
-            self::$cd = json_decode($raw, true);
-        } elseif (!$ig) {
-            self::$cd = $raw;
+            self::$content_data = $form_content['field'];
+            self::$file_data = $form_content['file'];
+        } elseif (!$is_get && $content_type == 'application/json') {
+            self::$content_data = json_decode($raw, true);
+        } elseif (!$is_get) {
+            self::$content_data = $raw;
         }
+
         // 執行
-        if ($crp = self::cmp(explode('/', trim($u, '/')), 'default')) {
-            call_user_func_array([$crp['c'], $crp['m']], $crp['p']);
+        if ($action_data = self::get_action(explode('/', trim($url, '/')), 'default')) {
+            call_user_func_array([
+                $action_data['class'],
+                $action_data['method']
+            ], $action_data['parameter']);
         } else {
             header_404();
         }
@@ -150,117 +218,222 @@ class SingleMVC {
      * @return void
      */
     public static function autoload_register() {
-        if (self::$hl++) return;
+        if (self::$is_loaded) {
+            return;
+        }
+        self::$is_loaded = true;
+
         // 載入第三方套件
-        foreach (['3rd', 'helper'] as $f) {
-            if (is_dir($h = SOURCE_DIR.DS.$f)) {
-                $hs = array_diff(scandir($h), ['.', '..']);
-                foreach ($hs as $i) self::require($h.DS.$i);
+        foreach (['3rd', 'helper'] as $folder) {
+            $dir = SOURCE_DIR.DS.$folder;
+            if (is_dir($dir)) {
+                $files = array_diff(scandir($dir), ['.', '..']);
+                foreach ($files as $file) {
+                    self::require($dir.DS.$file);
+                }
             }
         }
+
         // 自動載入 與 Composer
-        spl_autoload_register(function ($c) {
-            $fs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
-            if (!self::require($fs[0].DS.str_replace('\\', DS, ltrim($c, '\\')).'.php') && !str_contains($c, '\\')) {
-                if (self::$fs == null) {
-                    self::$fs = []; $f1 = ''; $f1 = function ($p) use (&$f1) {
-                        if (file_exists($p) && is_dir($p)) {
-                            $d = []; $l = array_diff(scandir($p), ['.', '..']);
-                            foreach ($l as $i) { if (is_dir($i = $p.DS.$i)) { $d[] = $i; } else if (is_file($i)) { self::$fs[] = $i; } }
-                            sort($d);
-                            foreach ($d as $i) $f1($i);
+        spl_autoload_register(function ($class) {
+            $dirs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
+            if (!self::require($dirs[0].DS.str_replace('\\', DS, ltrim($class, '\\')).'.php') && !str_contains($class, '\\')) {
+                if (self::$file_list == null) {
+                    self::$file_list = [];
+                    $list_paths = '';
+                    $list_paths = function ($dir) use (&$list_paths) {
+                        // 遞迴列出檔案
+                        if (file_exists($dir) && is_dir($dir)) {
+                            $dirs = [];
+                            $names = array_diff(scandir($dir), ['.', '..']);
+                            foreach ($names as $name) {
+                                $path = $dir.DS.$name;
+                                if (is_dir($path)) {
+                                    $dirs[] = $path;
+                                } else if (is_file($path)) {
+                                    self::$file_list[] = $path;
+                                }
+                            }
+                            sort($dirs);
+                            foreach ($dirs as $dir) {
+                                $list_paths($dir);
+                            }
                         }
                     };
-                    foreach ($fs as $f) $f1($f);
+                    foreach ($dirs as $dir) {
+                        $list_paths($dir);
+                    }
                 }
-                foreach (self::$fs as $i) { if (str_ends_with($i, DS.$c.'.php') && self::require($i)) break; }
+
+                // 尋找目標的檔案
+                foreach (self::$file_list as $file) {
+                    if (str_ends_with($file, DS.$class.'.php') && self::require($file)) {
+                        break;
+                    }
+                }
             }
         });
         self::require(ROOT.DS.'vendor'.DS.'autoload.php');
+
         // 載入設定
         self::require(SOURCE_DIR.DS.'config.php');
     }
 
     /**
-     * 檢查 Class, Method 和 Parameter
-     * @param array $u 已分割的 URL
-     * @param string $d 預設路由
+     * 取得 Class, Method 和 Parameter
+     * @param array $urls 已分割的 URL
+     * @param string $default 預設路由
      * @return array|bool
      */
-    private static function cmp($u, $d = null) {
-        $C = null; $M = null; $P = []; $r = self::$config->routes; $cd = SOURCE_DIR.DS.'controllers'; $pc = null;
-        if (count($u) > 0 && !empty($u[0]) && lang_load($u[0])) array_shift($u);
-        if (empty($u) || ($c = count($u)) == 1 && empty($u[0])) {
-            if (!empty($d) && isset($r[$d]) && is_string($dr = $r[$d])) $u = explode('/', trim($dr, '/'));
+    private static function get_action($urls, $default = null) {
+        $class = null;
+        $method = null;
+        $parameter = [];
+        $routes = self::$config->routes;
+        $controller_dir = SOURCE_DIR.DS.'controllers';
+        $pc = null;
+
+        // 檢查是否載入語系
+        if (count($urls) > 0 && !empty($urls[0]) && lang_load($urls[0])) {
+            array_shift($urls);
         }
-        if (count($u) > 0 && !empty($u[0]) && lang_load($u[0])) array_shift($u);
-        while ($c = count($u)) {
-            if ($c > 1 && $cm = self::ccm($u[0], $u[1])) { $C = $cm[0]; $M = $cm[1]; array_shift($u); array_shift($u); $P = $u; break; }
-            if ($cm = self::ccm($u[0], 'index')) { $C = $cm[0]; $M = $cm[1]; array_shift($u); $P = $u; break; }
-            if ($pc !== $u[0]) {
-                if (self::require(($tf = $cd.DS.$u[0]).'.php')) {
-                    $pc = $u[0]; continue;
-                } elseif (file_exists($tf) && is_dir($tf)) {
-                    $cd = $tf;
+
+        // 檢查預設路由
+        $url_length = count($urls);
+        if (empty($urls) || ($url_length == 1 && empty($urls[0]))) {
+            if (!empty($default) && isset($routes[$default]) && is_string($routes[$default])) {
+                $urls = explode('/', trim($routes[$default], '/'));
+            }
+        }
+
+        // 再次檢查是否載入語系
+        if (count($urls) > 0 && !empty($urls[0]) && lang_load($urls[0])) {
+            array_shift($urls);
+        }
+
+        while ($url_length = count($urls)) {
+            // 一般情況
+            if ($url_length > 1 && $callable = self::get_callable($urls[0], $urls[1])) {
+                $class = $callable['class'];
+                $method = $callable['method'];
+                array_shift($urls);
+                array_shift($urls);
+                $parameter = $urls;
+                break;
+            }
+
+            // 缺少 method，找 index
+            if ($callable = self::get_callable($urls[0], 'index')) {
+                $class = $callable['class'];
+                $method = $callable['method'];
+                array_shift($urls);
+                $parameter = $urls;
+                break;
+            }
+
+            // 檢查子目錄
+            if ($pc !== $urls[0]) {
+                $path = $controller_dir.DS.$urls[0];
+                if (self::require($path.'.php')) {
+                    $pc = $urls[0];
+                    continue;
+                } elseif (file_exists($path) && is_dir($path)) {
+                    $controller_dir = $path;
                 }
-                array_shift($u);
-            } else { break; }
+                array_shift($urls);
+            } else {
+                break;
+            }
         }
-        if ($C != null && $M != null) {
-            return ['c' => $C, 'm' => $M, 'p' => $P];
-        } elseif ($d != '404') {
+
+        if ($class != null && $method != null) {
+            return [
+                'class' => $class,
+                'method' => $method,
+                'parameter' => $parameter
+            ];
+        } elseif ($default != '404') {
             header_404();
-            return self::cmp([], '404');
+            return self::get_action([], '404');
         }
         return false;
     }
 
     /**
-     * 檢查 Class 和 Method 是否正確
-     * @param string $c Class 名稱
-     * @param string $m Method 名稱
+     * 取得可呼叫的 Class 和 Method
+     * @param string $class Class 名稱
+     * @param string $method Method 名稱
      * @return array|bool
      */
-    private static function ccm($c, $m) {
-        if (!class_exists($c) || !is_subclass_of($c, 'Controller')) return false;
-        $c = new $c();
+    private static function get_callable($class, $method) {
+        // 檢查繼承
+        if (!class_exists($class) || !is_subclass_of($class, 'Controller')) {
+            return false;
+        }
+        $class = new $class();
 
-        if (is_callable([$c, $rm = ($m.'_'.self::$hm)])) {
-            return [$c, $rm];
-        } elseif (self::$hm == 'get' && array_sum(array_map(function($v) use($m) {
-            return str_ends_with($m, '_'.$v) ? 1 : 0;
-        }, self::$am)) !== 1 && is_callable([$c, $m])) {
-            return [$c, $m];
+        // 檢查可用方法
+        if (is_callable([$class, $rm = ($method.'_'.self::$method)])) {
+            return [
+                'class' => $class,
+                'method' => $rm
+            ];
+        } elseif (self::$method == 'get' && array_sum(array_map(function($v) use($method) {
+            return str_ends_with($method, '_'.$v) ? 1 : 0;
+        }, self::$allowed_method)) !== 1 && is_callable([$class, $method])) {
+            return [
+                'class' => $class,
+                'method' => $method
+            ];
         }
         return false;
     }
 
     /**
      * 使用索引陣列取出陣列的值
-     * @param array $a 目標陣列
-     * @param array|string $k 索引陣列
+     * @param array $array 目標陣列
+     * @param array|string $keys 索引陣列
      * @return mixed
      */
-    private static function av($a, $k) {
-        $f = false; if (!is_array($k)) $k = [$k];
-        foreach ($k as $i) if ($f = isset($a[$i])) { $a = $a[$i]; } else { break; }
-        return $f ? $a : null;
+    private static function get_value($array, $keys) {
+        if (!is_array($keys)) {
+            $keys = [$keys];
+        }
+
+        // 取出多層陣列
+        $found = false;
+        foreach ($keys as $key) {
+            if ($found = isset($array[$key])) {
+                $array = $array[$key];
+            } else {
+                break;
+            }
+        }
+        return $found ? $array : null;
     }
 
     /**
      * 使用索引陣列設定陣列的值
-     * @param array $a 目標陣列
-     * @param array|string $k 索引陣列
-     * @param mixed $v 數值
+     * @param array $array 目標陣列
+     * @param array|string $keys 索引陣列
+     * @param mixed $value 數值
      */
-    private static function sav(&$a, $k, $v) {
-        if (!is_array($k)) $k = [$k];
-        foreach ($k as $i) {
-            if (!is_array($a)) $a = [];
-            if (is_array($a) && !isset($a[$i])) $a[$i] = [];
-            $a = &$a[$i];
+    private static function set_value(&$array, $keys, $value) {
+        if (!is_array($keys)) {
+            $keys = [$keys];
         }
-        $a = $v;
+
+        // 設定多層陣列
+        foreach ($keys as $key) {
+            if (!is_array($array)) {
+                $array = [];
+            }
+            if (is_array($array) && !isset($array[$key])) {
+                $array[$key] = [];
+            }
+            $array = &$array[$key];
+        }
+        $array = $value;
     }
 
     /**
@@ -269,9 +442,10 @@ class SingleMVC {
      * @return string|bool
      */
     public static function require($file) {
-        $f = false;
-        if ($f = self::require_check($file)) require_once $f;
-        return $f;
+        if ($file = self::require_check($file)) {
+            require_once $file;
+        }
+        return $file;
     }
 
     /**
@@ -280,9 +454,11 @@ class SingleMVC {
      * @return string|bool
      */
     public static function require_check($file) {
-        if (!str_ends_with($f = $file, '.php')) $f .= '.php';
-        $f = str_replace(['\\', '/'], DS, $f);
-        return file_exists($f) && is_resource($h = @fopen($f, 'r')) && fclose($h) ? $f : false;
+        if (!str_ends_with($file, '.php')) {
+            $file .= '.php';
+        }
+        $file = str_replace(['\\', '/'], DS, $file);
+        return file_exists($file) && is_resource($handler = @fopen($file, 'r')) && fclose($handler) ? $file : false;
     }
 
     /**
@@ -292,35 +468,42 @@ class SingleMVC {
      * @return mixed
      */
     public static function input($key = null, $type = null) {
-        $d = self::$hm == 'get' ? self::$ud : self::$cd;
-        $k = $key; $t = $type;
-        if ($k !== null && !is_string($k) && !is_array($k)) return null;
-        if ($t !== null && !is_string($t)) return null;
-        if ($k === null && $t === null) {
-            return $d;
-        } elseif ($k !== null && $t === null) {
-            if (is_string($k)) {
-                if (is_array($d) && isset($d[$k])) {
-                    return $d[$k];
+        $data = self::$method == 'get' ? self::$uri_data : self::$content_data;
+        // 檢查參數
+        if ($key !== null && !is_string($key) && !is_array($key)) {
+            return null;
+        }
+        if ($type !== null && !is_string($type)) {
+            return null;
+        }
+        if ($key === null && $type === null) {
+            return $data;
+        } elseif ($key !== null && $type === null) {
+            if (is_string($key)) {
+                if (is_array($data) && isset($data[$key])) {
+                    return $data[$key];
                 } else {
-                    $t = $k; $k = null;
+                    $type = $key;
+                    $key = null;
                 }
             } else {
-                $t = self::$hm;
+                $type = self::$method;
             }
         }
-        $d = null; $t = strtolower($t);
-        if ($t == 'get') {
-            $d = self::$ud;
-        } elseif ($t == 'file') {
-            $d = self::$fd;
-        } elseif ($t == self::$hm && in_array($t, self::$am)) {
-            $d = self::$cd;
+        $data = null;
+        $type = strtolower($type);
+        // 取出對應的資料
+        if ($type == 'get') {
+            $data = self::$uri_data;
+        } elseif ($type == 'file') {
+            $data = self::$file_data;
+        } elseif ($type == self::$method && in_array($type, self::$allowed_method)) {
+            $data = self::$content_data;
         }
-        if (is_array($k) && is_array($d)) {
-            return self::av($d, $k);
+        if (is_array($key) && is_array($data)) {
+            return self::get_value($data, $key);
         }
-        return $k === null || $d === null ? $d : (is_array($d) ? $d[$k] ?? null : null);
+        return $key === null || $data === null ? $data : (is_array($data) ? $data[$key] ?? null : null);
     }
 
     /**
@@ -331,56 +514,85 @@ class SingleMVC {
      * @return null|string
      */
     public static function output($view, $data = [], $flag = false) {
+        // 防止名稱衝突
+        $view_1bda = $view;
+        $data_8d77 = $data;
+        $flag_327a = $flag;
+
+        // 給如果視圖要使用這兩的變數用
         global $_DEBUG, $_TIME;
-        if ($flag === true) ob_start();
-        if (is_int($flag)) http_response_code($flag);
-        lang(); $d = $data; $v = trim(str_replace(['\\', '/'], DS, $ov = $view), DS);
-        if (!empty(self::$view[$ov])) {
+
+        // 檢查旗標
+        if ($flag_327a === true) {
+            ob_start();
+        }
+        if (is_int($flag_327a)) {
+            http_response_code($flag_327a);
+        }
+
+        // 載入語系
+        lang_load(self::$config->lang);
+
+        // 選定輸出內容
+        $original_view = $view_1bda;
+        $view_1bda = trim(str_replace(['\\', '/'], DS, $view_1bda), DS);
+        if (!empty(self::$view[$original_view])) {
+            // 從設定讀視圖
             header('Content-Type: text/html; charset=utf-8');
-            if (is_object($d)) $d = get_object_vars($d);
-            self::$pd[] = $d;
-            foreach (self::$pd as $d) extract($d);
-            eval('?>'.self::$view[$ov]);
-        } elseif ($vp = self::require_check(SOURCE_DIR.DS.'views'.DS.$v)) {
-            header('Content-Type: text/html; charset=utf-8');
-            if (is_object($d)) $d = get_object_vars($d);
-            self::$pd[] = $d;
-            foreach (self::$pd as $d) extract($d);
-            require $vp;
-        } else {
-            if ($scd = str_contains($v, '.')) {
-                header('Content-Disposition: attachment; filename='.rawurlencode(str_replace(['\\', '/'], '_', $v)));
+            if (is_object($data_8d77)) {
+                $data_8d77 = get_object_vars($data_8d77);
             }
-            if (str_ends_with($v, 'json')) {
+            self::$page_data[] = $data_8d77;
+            foreach (self::$page_data as $data_8d77) {
+                extract($data_8d77);
+            }
+            eval('?>'.self::$view[$original_view]);
+        } elseif ($view_path = self::require_check(SOURCE_DIR.DS.'views'.DS.$view_1bda)) {
+            // 從檔案讀視圖
+            header('Content-Type: text/html; charset=utf-8');
+            if (is_object($data_8d77)) {
+                $data_8d77 = get_object_vars($data_8d77);
+            }
+            self::$page_data[] = $data_8d77;
+            foreach (self::$page_data as $data_8d77) {
+                extract($data_8d77);
+            }
+            require $view_path;
+        } else {
+            if ($scd = str_contains($view_1bda, '.')) {
+                header('Content-Disposition: attachment; filename='.rawurlencode(str_replace(['\\', '/'], '_', $view_1bda)));
+            }
+            // 輸出各種格式
+            if (str_ends_with($view_1bda, 'json')) {
                 header('Content-Type: application/json');
-                echo json_encode($d, JSON_UNESCAPED_UNICODE);
-            } elseif (str_ends_with($v, 'html') || str_ends_with($v, 'htm')) {
+                echo json_encode($data_8d77, JSON_UNESCAPED_UNICODE);
+            } elseif (str_ends_with($view_1bda, 'html') || str_ends_with($view_1bda, 'htm')) {
                 header('Content-Type: text/html; charset=utf-8');
-                echo $d ?: '';
-            } elseif ($v == 'text' || str_ends_with($v, 'txt')) {
+                echo $data_8d77 ?: '';
+            } elseif ($view_1bda == 'text' || str_ends_with($view_1bda, 'txt')) {
                 header('Content-Type: text/plain; charset=utf-8');
-                echo $d ?: '';
-            } elseif (str_ends_with($v, 'jpeg') || str_ends_with($v, 'jpg')) {
+                echo $data_8d77 ?: '';
+            } elseif (str_ends_with($view_1bda, 'jpeg') || str_ends_with($view_1bda, 'jpg')) {
                 header('Content-Type: image/jpeg');
-                if (is_string($d)) {
-                    echo $d ?: '';
-                } elseif (is_resource($d)) {
-                    imagejpeg($d);
+                if (is_string($data_8d77)) {
+                    echo $data_8d77 ?: '';
+                } elseif (is_resource($data_8d77)) {
+                    imagejpeg($data_8d77);
                 }
-            } elseif (str_ends_with($v, 'png')) {
+            } elseif (str_ends_with($view_1bda, 'png')) {
                 header('Content-Type: image/png');
-                if (is_string($d)) {
-                    echo $d ?: '';
-                } elseif (is_resource($d)) {
-                    imagepng($d);
+                if (is_string($data_8d77)) {
+                    echo $data_8d77 ?: '';
+                } elseif (is_resource($data_8d77)) {
+                    imagepng($data_8d77);
                 }
             } elseif ($scd) {
                 header('Content-Type: application/octet-stream');
-                echo $d ?: '';
+                echo $data_8d77 ?: '';
             }
         }
 
-        return $flag === true ? ob_get_clean() : null;
+        return $flag_327a === true ? ob_get_clean() : null;
     }
 
     /**
@@ -390,16 +602,19 @@ class SingleMVC {
      * @return mixed
      */
     public static function session($key, $value = null) {
-        $r = null;
-        if (count($a = func_get_args()) == 1) {
-            $r = self::av($_SESSION, $a[0]);
+        $result = null;
+        $args = func_get_args();
+        if (count($args) == 1) {
+            // 取出資料
+            $result = self::get_value($_SESSION, $args[0]);
         } else {
+            // 存入資料
             session_status() !== PHP_SESSION_ACTIVE && session_start();
-            $v = $a[1] instanceof \Closure ? $a[1](session($key)) : $a[1];
-            self::sav($_SESSION, $a[0], $v);
-            $r = session_write_close();
+            $value = $args[1] instanceof \Closure ? $args[1](session($key)) : $args[1];
+            self::set_value($_SESSION, $args[0], $value);
+            $result = session_write_close();
         }
-        return $r;
+        return $result;
     }
 
     /**
@@ -414,17 +629,21 @@ class SingleMVC {
      * @return mixed
      */
     public static function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $secure = false, $httponly = false) {
-        $r = null; $e = $expires;
-        if (count($a = func_get_args()) == 1) {
-            $r = self::av($_COOKIE, $a[0]);
+        $result = null;
+        $args = func_get_args();
+        if (count($args) == 1) {
+            // 取出資料
+            $result = self::get_value($_COOKIE, $args[0]);
         } else {
-            $v = $a[1] instanceof \Closure ? $a[1](cookie($key)) : $a[1]; $t = [];
-            self::sav($_COOKIE, $a[0], $v);
-            self::sav($t, $a[0], '');
-            $t = substr(urldecode(http_build_query($t)), 0, -1);
-            $r = is_array($e) ? setcookie($t, $v, $e) : setcookie($t, $v, $e, $path, $domain, $secure, $httponly);
+            // 存入資料
+            $value = $args[1] instanceof \Closure ? $args[1](cookie($key)) : $args[1];
+            self::set_value($_COOKIE, $args[0], $value);
+            $temp = [];
+            self::set_value($temp, $args[0], '');
+            $name = substr(urldecode(http_build_query($temp)), 0, -1);
+            $result = is_array($expires) ? setcookie($name, $value, $expires) : setcookie($name, $value, $expires, $path, $domain, $secure, $httponly);
         }
-        return $r;
+        return $result;
     }
 
     /**
@@ -433,14 +652,24 @@ class SingleMVC {
      * @return string|array
      */
     public static function lang($key = '') {
-        $r = '{MISSING}'; $k = $key;
-        if (empty(self::$ld)) lang_load(self::$config->lang);
-        if (is_string($k)) $k = [$k];
-        if (is_array($k) && !empty(self::$lang)) {
-            $l = self::av(self::$lang, $k);
-            if (is_string($l) || is_array($l)) $r = $l;
+        $result = '{MISSING}';
+
+        // 讀取語系
+        if (empty(self::$loaded_lang)) {
+            lang_load(self::$config->lang);
         }
-        return $r;
+        if (is_string($key)) {
+            $key = [$key];
+        }
+
+        // 取出指定的值
+        if (is_array($key) && !empty(self::$lang)) {
+            $value = self::get_value(self::$lang, $key);
+            if (is_string($value) || is_array($value)) {
+                $result = $value;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -450,17 +679,24 @@ class SingleMVC {
      * @return bool
      */
     public static function lang_load($lang = '', &$now = null) {
-        static $ol = null; $l = $lang;
-        if (!$ol) $ol = self::$lang;
-        if (!self::$ld && !empty(self::$lang[$l])) {
-            self::$ld = $l; self::$lang = $ol[$l];
-            define('LANG', $l);
-        } elseif (!self::$ld && self::require(SOURCE_DIR.DS.'lang'.DS.$l)) {
-            self::$ld = $l;
-            if (count(self::$lang) == 1 && isset(self::$lang[$l])) self::$lang = self::$lang[$l];
-            define('LANG', $l);
+        static $original_lang = null;
+        if (!$original_lang) {
+            $original_lang = self::$lang;
         }
-        return ($now = self::$ld) == $l;
+        if (!self::$loaded_lang && !empty(self::$lang[$lang])) {
+            // 讀取設定的語系
+            self::$loaded_lang = $lang;
+            self::$lang = $original_lang[$lang];
+            define('LANG', $lang);
+        } elseif (!self::$loaded_lang && self::require(SOURCE_DIR.DS.'lang'.DS.$lang)) {
+            // 讀取檔案的語系
+            self::$loaded_lang = $lang;
+            if (count(self::$lang) == 1 && isset(self::$lang[$lang])) {
+                self::$lang = self::$lang[$lang];
+            }
+            define('LANG', $lang);
+        }
+        return ($now = self::$loaded_lang) == $lang;
     }
 
     /**
@@ -472,26 +708,40 @@ class SingleMVC {
         ini_set('memory_limit', '4095M');
         ini_set('max_execution_time', 3600);
         clearstatcache();
-        $r = ['status' => -1, 'message' => '', 'log' => '']; $d = $details; $tp = sys_get_temp_dir();
-        if (!file_put_contents($cp = $tp.DS.'composer.phar', fopen('https://getcomposer.org/composer.phar', 'r'))) {
-            $r['status'] = -1;  $r['message'] = 'Unabled to download composer.';
-        } elseif (!($c = new Phar($cp)) || !$c->extractTo($ep = $tp.DS.'composer', null, true)) {
-            $r['status'] = -2;  $r['message'] = 'Unabled to setup composer.';
-        } elseif (!self::require($ep.DS.'/vendor/autoload.php') || !putenv('COMPOSER_HOME='.$ep) || !chdir(ROOT)) {
-            $r['status'] = -3; $r['message'] = 'Unabled to setup composer.';
+        $result = [
+            'status' => -1,
+            'message' => '',
+            'log' => '',
+        ];
+        $dir = sys_get_temp_dir();
+        $file = $dir.DS.'composer.phar';
+        // 下載 composer
+        if (!file_put_contents($file, fopen('https://getcomposer.org/composer.phar', 'r'))) {
+            $result['status'] = -1;
+            $result['message'] = 'Unabled to download composer.';
+        } elseif (!($phar = new Phar($file)) || !$phar->extractTo($extrac_dir = $dir.DS.'composer', null, true)) {
+            $result['status'] = -2;
+            $result['message'] = 'Unabled to setup composer.';
+        } elseif (!self::require($extrac_dir.DS.'/vendor/autoload.php') || !putenv('COMPOSER_HOME='.$extrac_dir) || !chdir(ROOT)) {
+            $result['status'] = -3;
+            $result['message'] = 'Unabled to setup composer.';
         } else {
+            // 安裝相依性
             try {
-                $i = new Symfony\Component\Console\Input\ArrayInput(['command' => 'update']);
-                $o = new Symfony\Component\Console\Output\BufferedOutput();
-                $a = new Composer\Console\Application();
-                $a->setAutoExit(false);
-                $r['status'] = $a->run($i, $o); $r['log'] = $o->fetch();
+                $input = new Symfony\Component\Console\Input\ArrayInput(['command' => 'update']);
+                $output = new Symfony\Component\Console\Output\BufferedOutput();
+                $application = new Composer\Console\Application();
+                $application->setAutoExit(false);
+                $result['status'] = $application->run($input, $output);
+                $result['log'] = $output->fetch();
             }
             catch(Exception $ex) {
-                $r['status'] = -4; $r['message'] = $ex->getMessage(); $r['log'] = $ex->getTraceAsString();
+                $result['status'] = -4;
+                $result['message'] = $ex->getMessage();
+                $result['log'] = $ex->getTraceAsString();
             }
         }
-        return $d ? $r : $r['status'] == 0;
+        return $details ? $result : $result['status'] == 0;
     }
 
     /**
@@ -501,13 +751,24 @@ class SingleMVC {
      */
     public static function check_for_updates($details = false) {
         !self::$config->auto_update && clearstatcache();
-        $f = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php'); $m = [];
-        if (preg_match('([\d]\.[\d\.]*[\d])', $f, $m)) {
-            $r = version_compare(VERSION, $m[0]);
-            self::$config->auto_update && $r < 0 && file_put_contents(__FRAMEWORK__, $f);
-            return !$details ? $r < 0 : ['result' => $r, 'online' => $m[0], 'current' => VERSION, 'file' => $f];
+        $source = file_get_contents('https://raw.githubusercontent.com/kouji6309/SingleMVC/master/SingleMVC.php');
+        $temp = [];
+        if (preg_match('([\d]\.[\d\.]*[\d])', $source, $temp)) {
+            $result = version_compare(VERSION, $temp[0]);
+            self::$config->auto_update && $result < 0 && file_put_contents(__FRAMEWORK__, $source);
+            return !$details ? $result < 0 : [
+                'result' => $result,
+                'online' => $temp[0],
+                'current' => VERSION,
+                'file' => $source,
+            ];
         } else {
-            return !$details ? false : ['result' => 0, 'online' => 'unknow', 'current' => VERSION, 'file' => null];
+            return !$details ? false : [
+                'result' => 0,
+                'online' => 'unknow',
+                'current' => VERSION,
+                'file' => null,
+            ];
         }
     }
 }
@@ -596,27 +857,28 @@ abstract class Model {
     protected function db_connect($config = null) {
         try {
             if ($this->db_pdo == null) {
-                $c = $config;
-                if (empty($c['dsn'])) {
-                    $dc = SingleMVC::$config->db;
-                    if (!empty($dc['dsn'])) {
-                        $c = $dc;
-                    } else {
+                if (empty($config['dsn'])) {
+                    $config = SingleMVC::$config->db;
+                    if (empty($config['dsn'])) {
+                        // 處理舊版設定
                         // trigger_error('Deprecated: The database config structure is deprecated', E_USER_DEPRECATED);
-                        $c = [
-                            'dsn' => 'mysql:host='.($dc['host'] ?? 'localhost').(!empty($dc['name']) ? ';dbname='.$dc['name'] : '').';charset=utf8mb4',
-                            'username' => $dc['username'] ?? 'root',
-                            'password' => $dc['password'] ?? '',
+                        $config = [
+                            'dsn' => 'mysql:host='.($config['host'] ?? 'localhost').(!empty($config['name']) ? ';dbname='.$config['name'] : '').';charset=utf8mb4',
+                            'username' => $config['username'] ?? 'root',
+                            'password' => $config['password'] ?? '',
                             'options' => [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4', PDO::ATTR_EMULATE_PREPARES => false],
                         ];
                     }
                 }
-                if (($i = array_search($c, self::$db_pdo_index)) === false) {
-                    $i = count(self::$db_pdo_list);
-                    self::$db_pdo_list[] = new PDO($c['dsn'], $c['username'], $c['password'], $c['options']);
-                    self::$db_pdo_index[] = $c;
+
+                // 同設定只建立一次連線
+                $index = array_search($config, self::$db_pdo_index);
+                if ($index === false) {
+                    $index = count(self::$db_pdo_list);
+                    self::$db_pdo_list[] = new PDO($config['dsn'], $config['username'], $config['password'], $config['options']);
+                    self::$db_pdo_index[] = $config;
                 }
-                $this->db_pdo = &self::$db_pdo_list[$i];
+                $this->db_pdo = &self::$db_pdo_list[$index];
             }
         }
         catch (Exception $ex) { }
@@ -629,7 +891,9 @@ abstract class Model {
      * @return PDOStatement|bool
      */
     protected function db_query($statement) {
-        if ($this->db_connect()) return $this->db_statement = $this->db_pdo->query($statement);
+        if ($this->db_connect()) {
+            return $this->db_statement = $this->db_pdo->query($statement);
+        }
         return false;
     }
 
@@ -639,7 +903,9 @@ abstract class Model {
      * @return PDOStatement|bool
      */
     protected function db_prepare($statement) {
-        if ($this->db_connect()) return $this->db_statement = $this->db_pdo->prepare($statement);
+        if ($this->db_connect()) {
+            return $this->db_statement = $this->db_pdo->prepare($statement);
+        }
         return false;
     }
 
@@ -649,12 +915,12 @@ abstract class Model {
      */
     protected function db_insert() {
         if (($s = $this->db_statement) && $s->execute()) {
-            $c = $s->rowCount();
-            $l = $this->db_pdo->lastInsertId();
-            if ($c == 1) {
-                return $l ?: $c;
+            $count = $s->rowCount();
+            $last_id = $this->db_pdo->lastInsertId();
+            if ($count == 1) {
+                return $last_id ?: $count;
             } else {
-                return $c;
+                return $count;
             }
         }
         return false;
@@ -666,8 +932,12 @@ abstract class Model {
      * @return array|bool
      */
     protected function db_select($force_array = false) {
-        if (($s = $this->db_statement) && $s->execute()) {
-            if (($r = $s->fetchAll(PDO::FETCH_ASSOC)) !== false) return (count($r) == 1) && !$force_array ? $r[0] : $r;
+        $statement = $this->db_statement;
+        if ($statement && $statement->execute()) {
+            $datas = $statement->fetchAll(PDO::FETCH_ASSOC);
+            if ($datas !== false) {
+                return (count($datas) == 1) && !$force_array ? $datas[0] : $datas;
+            }
         }
         return false;
     }
@@ -677,7 +947,10 @@ abstract class Model {
      * @return int|bool 異動的列數
      */
     protected function db_update() {
-        if (($s = $this->db_statement) && $s->execute()) return $s->rowCount();
+        $statement = $this->db_statement;
+        if ($statement && $statement->execute()) {
+            return $statement->rowCount();
+        }
         return false;
     }
 
@@ -689,31 +962,35 @@ abstract class Model {
      * @return bool
      */
     protected function db_bind($parameter, $value = '', $type = PDO::PARAM_STR) {
-        if ($s = $this->db_statement) {
-            if (is_array($p = $parameter) && $r = true) {
-                foreach ($p as $k => $v) {
-                    if (is_int($k)) $k += 1;
-                    if (is_array($v)) {
-                        if (count($v) == 1) {
-                            $r &= $s->bindValue($k, $v[0]);
-                        } elseif (count($v) == 2) {
-                            $r &= $s->bindValue($k, $v[0], $v[1]);
+        if ($statement = $this->db_statement) {
+            $result = true;
+            if (is_array($parameter)) {
+                // 擴充 bind 可接受鍵值物件
+                foreach ($parameter as $key => $val) {
+                    if (is_int($key)) {
+                        $key += 1;
+                    }
+                    if (is_array($val)) {
+                        if (count($val) == 1) {
+                            $result &= $statement->bindValue($key, $val[0]);
+                        } elseif (count($val) == 2) {
+                            $result &= $statement->bindValue($key, $val[0], $val[1]);
                         }
-                    } elseif (is_int($v)) {
-                        $r &= $s->bindValue($k, $v, PDO::PARAM_INT);
-                    } elseif (is_bool($v)) {
-                        $r &= $s->bindValue($k, $v, PDO::PARAM_BOOL);
-                    } elseif (is_null($v)) {
-                        $r &= $s->bindValue($k, $v, PDO::PARAM_NULL);
-                    } elseif (is_resource($v)) {
-                        $r &= $s->bindValue($k, $v, PDO::PARAM_LOB);
+                    } elseif (is_int($val)) {
+                        $result &= $statement->bindValue($key, $val, PDO::PARAM_INT);
+                    } elseif (is_bool($val)) {
+                        $result &= $statement->bindValue($key, $val, PDO::PARAM_BOOL);
+                    } elseif (is_null($val)) {
+                        $result &= $statement->bindValue($key, $val, PDO::PARAM_NULL);
+                    } elseif (is_resource($val)) {
+                        $result &= $statement->bindValue($key, $val, PDO::PARAM_LOB);
                     } else {
-                        $r &= $s->bindValue($k, $v, PDO::PARAM_STR);
+                        $result &= $statement->bindValue($key, $val, PDO::PARAM_STR);
                     }
                 }
-                return $r;
+                return $result;
             } else {
-                return $s->bindValue($p, $value, $type);
+                return $statement->bindValue($parameter, $value, $type);
             }
         }
         return false;
@@ -724,7 +1001,9 @@ abstract class Model {
      * @return bool
      */
     protected function db_begin() {
-        if ($this->db_connect()) return $this->db_pdo->beginTransaction();
+        if ($this->db_connect()) {
+            return $this->db_pdo->beginTransaction();
+        }
         return false;
     }
 
@@ -733,7 +1012,9 @@ abstract class Model {
      * @return bool
      */
     protected function db_commit() {
-        if ($this->db_connect()) return $this->db_pdo->commit();
+        if ($this->db_connect()) {
+            return $this->db_pdo->commit();
+        }
         return false;
     }
 
@@ -742,7 +1023,9 @@ abstract class Model {
      * @return bool
      */
     protected function db_rollBack() {
-        if ($this->db_connect()) return $this->db_pdo->rollBack();
+        if ($this->db_connect()) {
+            return $this->db_pdo->rollBack();
+        }
         return false;
     }
 
@@ -751,9 +1034,9 @@ abstract class Model {
      * @return bool|string
      */
     protected function db_debug() {
-        if ($s = $this->db_statement) {
+        if ($statement = $this->db_statement) {
             ob_start();
-            $s->debugDumpParams();
+            $statement->debugDumpParams();
             return ob_get_clean();
         }
         return false;
@@ -782,121 +1065,191 @@ abstract class Model {
      * @return CurlHandle|false
      */
     protected static function request_async($url, $method = 'get', $data = [], $options = []) {
-        $ch = curl_init();
-        $m = strtoupper($method); $u = $url; $d = $data; $o = $options;
-        if (!$ch || !$u || !$m) return false;
-        if (!curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $m)) return false;
-        if (!empty($o['Option']) && is_array($oo = $o['Option'])) {
-            if (!curl_setopt_array($ch, $oo)) return false;
+        $handler = curl_init();
+        $method = strtoupper($method);
+        if (!$handler || !$url || !$method) {
+            return false;
         }
-        if ($m == 'GET') {
-            if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d ?: []))) return false;
+        if (!curl_setopt($handler, CURLOPT_CUSTOMREQUEST, $method)) {
+            return false;
+        }
+        if (!empty($options['Option']) && is_array($options['Option'])) {
+            if (!curl_setopt_array($handler, $options['Option'])) {
+                return false;
+            }
+        }
+        if ($method == 'GET') {
+            // 處理 URI
+            if (!curl_setopt($handler, CURLOPT_URL, $url.(!str_contains($url, '?') ? '?' : '&').http_build_query($data ?: []))) {
+                return false;
+            }
         } else {
-            if (is_array($d) && isset($d['_GET'])) {
-                if (!curl_setopt($ch, CURLOPT_URL, $u.(!str_contains($u, '?') ? '?' : '&').http_build_query($d['_GET']))) return false;
-                unset($d['_GET']);
+            // 處理 URI
+            if (is_array($data) && isset($data['_GET'])) {
+                if (!curl_setopt($handler, CURLOPT_URL, $url.(!str_contains($url, '?') ? '?' : '&').http_build_query($data['_GET']))) {
+                    return false;
+                }
+                unset($data['_GET']);
             } else {
-                if (!curl_setopt($ch, CURLOPT_URL, $u)) return false;
+                if (!curl_setopt($handler, CURLOPT_URL, $url)) {
+                    return false;
+                }
             }
-            if (!curl_setopt($ch, CURLOPT_POST, true)) return false;
-            $hct = ($ct = '1') && (!empty($o['Header']['Content-Type']) && is_string($ct = $o['Header']['Content-Type']));
-            if ((($ia = is_array($d)) && !$hct) || ($ia && str_starts_with($ct, 'application/x-www-form-urlencoded'))) {
-                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($d))) return false;
-            } elseif ($ia && $hct && str_starts_with($ct, 'multipart/form-data')) {
-                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, $d)) return false;
-            } elseif ($hct && str_starts_with($ct, 'application/json')) {
-                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($d))) return false;
-            } elseif (is_string($d)) {
-                if (!$hct) $o['Header']['Content-Type'] = 'text/plain';
-                if (!curl_setopt($ch, CURLOPT_POSTFIELDS, $d)) return false;
+            if (!curl_setopt($handler, CURLOPT_POST, true)) {
+                return false;
+            }
+            // 處理內容資料
+            $is_array = is_array($data);
+            $content_type = 'application/octet-stream';
+            $has_content_type = false;
+            if (!empty($options['Header']['Content-Type']) && is_string($options['Header']['Content-Type'])) {
+                $has_content_type = true;
+                $content_type = $options['Header']['Content-Type'];
+            }
+            if (($is_array && !$has_content_type) || ($is_array && str_starts_with($content_type, 'application/x-www-form-urlencoded'))) {
+                if (!curl_setopt($handler, CURLOPT_POSTFIELDS, http_build_query($data))) {
+                    return false;
+                }
+            } elseif ($is_array && $has_content_type && str_starts_with($content_type, 'multipart/form-data')) {
+                if (!curl_setopt($handler, CURLOPT_POSTFIELDS, $data)) {
+                    return false;
+                }
+            } elseif ($has_content_type && str_starts_with($content_type, 'application/json')) {
+                if (!curl_setopt($handler, CURLOPT_POSTFIELDS, json_encode($data))) {
+                    return false;
+                }
+            } elseif (is_string($data)) {
+                if (!$has_content_type) {
+                    $options['Header']['Content-Type'] = 'text/plain';
+                }
+                if (!curl_setopt($handler, CURLOPT_POSTFIELDS, $data)) {
+                    return false;
+                }
             }
         }
-        if (!empty($o['Header']) && is_array($hs = $o['Header'])) {
-            $t = [];
-            foreach ($hs as $k => $h) $t[] = $k.': '.$h;
-            if (!curl_setopt($ch, CURLOPT_HTTPHEADER, $t)) return false;
+        // 設定各種欄位
+        if (!empty($options['Header']) && is_array($options['Header'])) {
+            $headers = [];
+            foreach ($options['Header'] as $key => $val) {
+                $headers[] = $key.': '.$val;
+            }
+            if (!curl_setopt($handler, CURLOPT_HTTPHEADER, $headers)) {
+                return false;
+            }
         }
-        if (!empty($o['User-Agent']) && is_string($ua = $o['User-Agent'])) {
-            if (!curl_setopt($ch, CURLOPT_USERAGENT, $ua)) return false;
+        if (!empty($options['User-Agent']) && is_string($options['User-Agent'])) {
+            if (!curl_setopt($handler, CURLOPT_USERAGENT, $options['User-Agent'])) {
+                return false;
+            }
         }
-        if (!empty($o['Cookie']) && is_string($c = $o['Cookie'])) {
-            if (!curl_setopt($ch, CURLOPT_COOKIE, $c)) return false;
+        if (!empty($options['Cookie']) && is_string($options['Cookie'])) {
+            if (!curl_setopt($handler, CURLOPT_COOKIE, $options['Cookie'])) {
+                return false;
+            }
         } elseif (defined('COOKIE_DIR')) {
-            $c = rtrim(COOKIE_DIR, '/\\').DS.($o['Cookie-File'] ?? 'cookie').'.tmp';
-            if (!curl_setopt($ch, CURLOPT_COOKIEJAR, $c)) return false;
-            if (!curl_setopt($ch, CURLOPT_COOKIEFILE, $c)) return false;
+            $path = rtrim(COOKIE_DIR, '/\\').DS.($options['Cookie-File'] ?? 'cookie').'.tmp';
+            if (!curl_setopt($handler, CURLOPT_COOKIEJAR, $path)) {
+                return false;
+            }
+            if (!curl_setopt($handler, CURLOPT_COOKIEFILE, $path)) {
+                return false;
+            }
         }
-        if (isset($o['SSL-Verify']) && is_bool($s = $o['SSL-Verify'])) {
-            if (!curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, $s * 1)) return false;
+        if (isset($options['SSL-Verify']) && is_bool($options['SSL-Verify'])) {
+            if (!curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, $options['SSL-Verify'] * 1)) {
+                return false;
+            }
         }
-        if (!empty($o['Proxy']) && is_string($p = $o['Proxy'])) {
-            if (!curl_setopt($ch, CURLOPT_PROXY, $p)) return false;
+        if (!empty($options['Proxy']) && is_string($options['Proxy'])) {
+            if (!curl_setopt($handler, CURLOPT_PROXY, $options['Proxy'])) {
+                return false;
+            }
         }
-        if (isset($o['HTTP-Version']) && is_int($v = $o['HTTP-Version'])) {
-            if (!curl_setopt($ch, CURLOPT_HTTP_VERSION, $v)) return false;
+        if (isset($options['HTTP-Version']) && is_int($options['HTTP-Version'])) {
+            if (!curl_setopt($handler, CURLOPT_HTTP_VERSION, $options['HTTP-Version'])) {
+                return false;
+            }
         }
-        if (!curl_setopt($ch, CURLOPT_RETURNTRANSFER, true)) return false;
-        return $ch;
+        if (!curl_setopt($handler, CURLOPT_RETURNTRANSFER, true)) {
+            return false;
+        }
+        return $handler;
     }
 
     /**
      * 執行一個或多個非同步請求
-     * @param mixed $rs 請求物件
+     * @param mixed $handlers 請求物件
      * @param int $start 開始索引
      * @param int $length 長度
      * @param bool $get_header 是否傳回 Header
      * @return string|array|false
      */
-    protected static function request_run($rs, $start = 0, $length = -1, $get_header = false) {
-        $ck = function($o) {
+    protected static function request_run($handlers, $start = 0, $length = -1, $get_header = false) {
+        $is_handler = function($handler) {
+            // 檢查是否為資源
             if (version_compare(PHP_VERSION, '8.0', '<')) {
-                return gettype($o) === 'resource' && get_resource_type($o) === 'curl';
+                return gettype($handler) === 'resource' && get_resource_type($handler) === 'curl';
             } else {
-                return $o instanceof CurlHandle;
+                return $handler instanceof CurlHandle;
             }
         };
-        $n = 'request'; $one = false;
-        if ($ck($rs)) {
-            $rs = [$rs]; $start = 0; $length = -1; $one = true;
-        } elseif (gettype($rs) != 'array') {
+        $is_one = false;
+        if ($is_handler($handlers)) {
+            $handlers = [$handlers];
+            $start = 0;
+            $length = -1;
+            $is_one = true;
+        } elseif (gettype($handlers) != 'array') {
             return false;
         }
-        if (($s = $start) < 0 || $s > count($rs)) $s = 0;
-        if (($l = $length) < 0 || ($s + $l) > count($rs)) $l = count($rs) - $s;
-        $e = $s + $l;
-        $cb = false;
-        if (!$ck($rs[$s])) {
-            if ($ck($rs[$s][$n])) {
-                $cb = true;
+
+        // 檢查執行範圍
+        if ($start < 0 || $start > count($handlers)) {
+            $start = 0;
+        }
+        if ($length < 0 || ($start + $length) > count($handlers)) {
+            $length = count($handlers) - $start;
+        }
+        $end = $start + $length;
+        $is_named = false;
+        if (!$is_handler($handlers[$start])) {
+            if ($is_handler($handlers[$start]['request'])) {
+                $is_named = true;
             } else {
                 return [];
             }
         }
-        $mh = curl_multi_init();
-        for ($i = $s; $i < $e; $i++) {
-            curl_setopt($cb ? $rs[$i][$n] : $rs[$i], CURLOPT_HEADER, $get_header);
-            curl_multi_add_handle($mh, $cb ? $rs[$i][$n] : $rs[$i]);
+
+        // 執行請求
+        $multi_handler = curl_multi_init();
+        for ($i = $start; $i < $end; $i++) {
+            curl_setopt($is_named ? $handlers[$i]['request'] : $handlers[$i], CURLOPT_HEADER, $get_header);
+            curl_multi_add_handle($multi_handler, $is_named ? $handlers[$i]['request'] : $handlers[$i]);
         }
-        $rg = null;
+        $is_active = null;
         do {
-            curl_multi_exec($mh, $rg);
-            curl_multi_select($mh);
-        } while ($rg > 0);
-        for ($i = $s; $i < $e; $i++) curl_multi_remove_handle($mh, $cb ? $rs[$i][$n]: $rs[$i]);
-        curl_multi_close($mh);
-        $r = [];
-        for ($i = $s; $i < $e; $i++) {
-            if ($cb) {
-                $t = curl_multi_getcontent($rs[$i][$n]);
-                $r[] = array_merge($rs[$i], $get_header ? self::request_parse($t) : ['content' => $t]);
-                curl_close($rs[$i][$n]);
+            curl_multi_exec($multi_handler, $is_active);
+            curl_multi_select($multi_handler);
+        } while ($is_active > 0);
+        for ($i = $start; $i < $end; $i++) {
+            curl_multi_remove_handle($multi_handler, $is_named ? $handlers[$i]['request']: $handlers[$i]);
+        }
+        curl_multi_close($multi_handler);
+
+        // 處理回應
+        $result = [];
+        for ($i = $start; $i < $end; $i++) {
+            if ($is_named) {
+                $t = curl_multi_getcontent($handlers[$i]['request']);
+                $result[] = array_merge($handlers[$i], $get_header ? self::request_parse($t) : ['content' => $t]);
+                curl_close($handlers[$i]['request']);
             } else {
-                $t = curl_multi_getcontent($rs[$i]);
-                $r[] = $get_header ? self::request_parse($t) : $t;
-                curl_close($rs[$i]);
+                $t = curl_multi_getcontent($handlers[$i]);
+                $result[] = $get_header ? self::request_parse($t) : $t;
+                curl_close($handlers[$i]);
             }
         }
-        return $one ? $r[0] : $r;
+        return $is_one ? $result[0] : $result;
     }
 
     /**
@@ -905,25 +1258,34 @@ abstract class Model {
      * @return array
      */
     protected static function request_parse($response) {
-        $r = $response;
-        if (empty($r)) return ['header' => [], 'content' => ''];
-        list($h, $cr) = explode("\r\n\r\n", $r, 2);
-        if (stripos($h, "200 Connection established\r\n") !== false) {
-            list($f, $h, $cr) = explode("\r\n\r\n", $r, 3);
+        if (empty($response)) {
+            return [
+                'header' => [],
+                'content' => '',
+            ];
         }
-        $fs = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $h));
-        $hr = ['Status' => intval(explode(' ', array_shift($fs))[1] ?? 0)];
-        foreach ($fs as $f) {
-            if (preg_match('/([^:]+): (.+)/m', $f, $m) ) {
-                $m[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) { return strtoupper($r[0]); }, strtolower(trim($m[1])));
-                if (isset($hr[$m[1]])) {
-                    $hr[$m[1]] = [$hr[$m[1]], $m[2]];
+        list($header, $content) = explode("\r\n\r\n", $response, 2);
+        if (stripos($header, "200 Connection established\r\n") !== false) {
+            // 處理使用 Proxy 會多的標頭
+            list(, $header, $content) = explode("\r\n\r\n", $response, 3);
+        }
+        $headers = explode("\r\n", preg_replace('/\x0D\x0A[\x09\x20]+/', ' ', $header));
+        $header_result = ['Status' => intval(explode(' ', array_shift($headers))[1] ?? 0)];
+
+        // 解析回應標頭
+        foreach ($headers as $header) {
+            if (preg_match('/([^:]+): (.+)/m', $header, $split_header) ) {
+                $split_header[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) {
+                    return strtoupper($r[0]);
+                }, strtolower(trim($split_header[1])));
+                if (isset($header_result[$split_header[1]])) {
+                    $header_result[$split_header[1]] = [$header_result[$split_header[1]], $split_header[2]];
                 } else {
-                    $hr[$m[1]] = trim($m[2]);
+                    $header_result[$split_header[1]] = trim($split_header[2]);
                 }
             }
         }
-        return ['header' => $hr, 'content' => $cr];
+        return ['header' => $header_result, 'content' => $content];
     }
 }
 
@@ -1042,7 +1404,7 @@ if (version_compare(PHP_VERSION, '8.0', '<')) {
      * @return bool
      */
     function str_starts_with($haystack, $needle) {
-        return substr($haystack, 0, strlen($n = $needle)) === $n;
+        return substr($haystack, 0, strlen($needle)) === $needle;
     }
 
     /**
@@ -1052,7 +1414,7 @@ if (version_compare(PHP_VERSION, '8.0', '<')) {
      * @return bool
      */
     function str_ends_with($haystack, $needle) {
-        return !($l = strlen($n = $needle)) || (substr($haystack, -$l) === $n);
+        return !($l = strlen($needle)) || (substr($haystack, -$l) === $needle);
     }
 }
 
@@ -1090,20 +1452,23 @@ $_DEBUG = [];
  */
 function debug($msg = '') {
     global $_DEBUG;
-    list($us, $s) = explode(' ', microtime());
-    $t = date('H:i:s', $s * 1).'.'.sprintf('%03d', floor($us * 1000));
-    if (is_string($m = $msg)) {
-        $d = $t."\t".$m;
+    list($us, $sec) = explode(' ', microtime());
+    $t = date('H:i:s', $sec * 1).'.'.sprintf('%03d', floor($us * 1000));
+    if (is_string($msg)) {
+        $data = $t."\t".$msg;
     } else {
         ob_start();
-        var_dump($m);
-        $d = $t."\tdata:\n".ob_get_clean();
+        var_dump($msg);
+        $data = $t."\tdata:\n".ob_get_clean();
     }
     if (defined('DEBUG_DIR')) {
-        if (file_exists($f = rtrim(DEBUG_DIR, '/\\').DS.'debug.log') && empty($_DEBUG)) unlink($f);
-        file_put_contents($f, $d."\n", FILE_APPEND);
+        $file = rtrim(DEBUG_DIR, '/\\').DS.'debug.log';
+        if (file_exists($file) && empty($_DEBUG)) {
+            unlink($file);
+        }
+        file_put_contents($file, $data."\n", FILE_APPEND);
     }
-    return ($_DEBUG[] = $d)."\n";
+    return ($_DEBUG[] = $data)."\n";
 }
 
 /**
@@ -1125,26 +1490,26 @@ $_TIME = ['total' => [], 'block' => []];
  * @param string $tag 註記
  */
 function stopwatch($tag = '') {
-    global $_TIME; $_T = &$_TIME;
-    $t = microtime(true); $c = $tag;
-    if (!empty($_T['block'][$c])) {
-        if ($_T['block'][$c]['start'] === false) {
-            $_T['block'][$c]['start'] = $t;
+    global $_TIME;
+    $time = microtime(true);
+    if (!empty($_TIME['block'][$tag])) {
+        if ($_TIME['block'][$tag]['start'] === false) {
+            $_TIME['block'][$tag]['start'] = $time;
         } else {
-            $_T['block'][$c]['count']++;
-            $_T['block'][$c]['time'] += $t - $_T['block'][$c]['start'];
-            $_T['block'][$c]['start'] = false;
+            $_TIME['block'][$tag]['count']++;
+            $_TIME['block'][$tag]['time'] += $time - $_TIME['block'][$tag]['start'];
+            $_TIME['block'][$tag]['start'] = false;
         }
-    } elseif (!empty($_T['total'][$c])) {
-        $_T['block'][$c] = ['start' => false, 'count' => 1, 'time' => $t - $_T['total'][$c]['time']];
-        unset($_T['total'][$c]);
+    } elseif (!empty($_TIME['total'][$tag])) {
+        $_TIME['block'][$tag] = ['start' => false, 'count' => 1, 'time' => $time - $_TIME['total'][$tag]['time']];
+        unset($_TIME['total'][$tag]);
     } else {
-        if (empty($_T['total'])) {
-            $_T['total'][$c ?: 'start'] = ['time' => $t, 'splits' => 0, 'laps' => 0];
+        if (empty($_TIME['total'])) {
+            $_TIME['total'][$tag ?: 'start'] = ['time' => $time, 'splits' => 0, 'laps' => 0];
         } else {
-            $dt_s = $t - reset($_T['total'])['time'];
-            $dt_l = $t - end($_T['total'])['time'];
-            $_T['total'][$c] = ['time' => $t, 'splits' => $dt_s, 'laps' => $dt_l];
+            $dt_s = $time - reset($_TIME['total'])['time'];
+            $dt_l = $time - end($_TIME['total'])['time'];
+            $_TIME['total'][$tag] = ['time' => $time, 'splits' => $dt_s, 'laps' => $dt_l];
         }
     }
 }
@@ -1159,12 +1524,16 @@ function stopwatch($tag = '') {
  * @return string
  */
 function stopwatch_format($format = []) {
-    global $_TIME; $_T = &$_TIME; $f = $format;
-    $r = $f['total']['head'] ?? "Tag\tTime\tSplits\tLaps\n";
-    foreach ($_T['total'] ?? [] as $t => $d) $r .= sprintf($f['total']['body'] ?? "%s\t%.3f\t%.3f\t%.3f\n", $t, $d['time'], $d['splits'], $d['laps']);
-    $r .= ($f['total']['foot'] ?? "\n").($f['block']['head'] ?? "Tag\tCount\tTime\n");
-    foreach ($_T['block'] ?? [] as $t => $d) $r .= sprintf($f['block']['body'] ?? "%s\t%.3f\t%.3f\n", $t, $d['count'], $d['time']);
-    return $r.($f['block']['foot'] ?? "\n");
+    global $_TIME;
+    $result = $format['total']['head'] ?? "Tag\tTime\tSplits\tLaps\n";
+    foreach ($_TIME['total'] ?? [] as $tag => $data) {
+        $result .= sprintf($format['total']['body'] ?? "%s\t%.3f\t%.3f\t%.3f\n", $tag, $data['time'], $data['splits'], $data['laps']);
+    }
+    $result .= ($format['total']['foot'] ?? "\n").($format['block']['head'] ?? "Tag\tCount\tTime\n");
+    foreach ($_TIME['block'] ?? [] as $tag => $data) {
+        $result .= sprintf($format['block']['body'] ?? "%s\t%.3f\t%.3f\n", $tag, $data['count'], $data['time']);
+    }
+    return $result.($format['block']['foot'] ?? "\n");
 }
 
 /**
@@ -1183,10 +1552,10 @@ function check_for_updates($details = false) {
  * @return string
  */
 function jwt_encode($data, $secret) {
-    $h = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', 'typ'=> 'JWT'])));
-    $p = str_replace('=', '', base64_encode(json_encode($data)));
-    $s = str_replace('=', '', base64_encode(hash_hmac('sha256', $h.'.'.$p, $secret, true)));
-    return $h.'.'.$p.'.'.$s;
+    $header = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', 'typ'=> 'JWT'])));
+    $payload = str_replace('=', '', base64_encode(json_encode($data)));
+    $signature = str_replace('=', '', base64_encode(hash_hmac('sha256', $header.'.'.$payload, $secret, true)));
+    return $header.'.'.$payload.'.'.$signature;
 }
 
 /**
@@ -1196,16 +1565,22 @@ function jwt_encode($data, $secret) {
  * @return mixed
  */
 function jwt_decode($token, $secret) {
-    if (!is_string($token) || !is_string($secret)) return false;
-    $t = explode('.', $token);
-    if (count($t) != 3) return false;
-    list($h, $p, $s) = $t;
-    $hd = json_decode(base64_decode($h), true);
-    if (!$hd) return false;
-    $sd = base64_decode($s);
-    $sc = hash_hmac('sha'.substr($hd['alg'] ?? 'HS256', 2, 3), $h.'.'.$p, $secret, true);
-    if ($sd === $sc) {
-        return json_decode(base64_decode($p), true);
+    if (!is_string($token) || !is_string($secret)) {
+        return false;
+    }
+    $token = explode('.', $token);
+    if (count($token) != 3) {
+        return false;
+    }
+    list($header, $payload, $signature) = $token;
+    $decoded_header = json_decode(base64_decode($header), true);
+    if (!$decoded_header) {
+        return false;
+    }
+    $decoded_signature = base64_decode($signature);
+    $signature = hash_hmac('sha'.substr($decoded_header['alg'] ?? 'HS256', 2, 3), $header.'.'.$payload, $secret, true);
+    if ($decoded_signature === $signature) {
+        return json_decode(base64_decode($payload), true);
     }
     return false;
 }
