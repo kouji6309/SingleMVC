@@ -45,7 +45,7 @@ class welcome extends Controller {
 // Model ======================================================================
 class TestModel extends Model {
     public function getMsg() {
-        $r = self::request('http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'], 'post');
+        $r = self::request(HOST.$_SERVER['REQUEST_URI'], 'post');
         $r = json_decode($r, true);
         return $r['msg'] ?? 'error';
     }
