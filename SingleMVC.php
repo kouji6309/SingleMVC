@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.22.1004');
+define('VERSION', '1.23.713');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -462,8 +462,35 @@ class SingleMVC {
     }
 
     /**
+     * 檢查變數是否為指定型別
+     * @param mixed $var
+     * @param string|string[] $types
+     * @return bool
+     */
+    public static function instanceof($var, $types) {
+        if (is_string($types)) {
+            $types = [$types];
+        }
+
+        if (!is_array($types)) {
+            return false;
+        }
+
+        foreach ($types as $type) {
+            if (!is_string($type)) {
+                continue;
+            }
+
+            if (gettype($var) === $type || is_a($var, $type) || is_resource($var) && get_resource_type($var) === $type) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 取得輸入的資料
-     * @param mixed $key 索引名稱
+     * @param string|string[] $key 索引名稱
      * @param string $type 資料總類
      * @return mixed
      */
@@ -576,14 +603,14 @@ class SingleMVC {
                 header('Content-Type: image/jpeg');
                 if (is_string($data_8d77)) {
                     echo $data_8d77 ?: '';
-                } elseif (is_resource($data_8d77)) {
+                } elseif (SingleMVC::instanceof($data_8d77, ['GdImage', 'gd'])) {
                     imagejpeg($data_8d77);
                 }
             } elseif (str_ends_with($view_1bda, 'png')) {
                 header('Content-Type: image/png');
                 if (is_string($data_8d77)) {
                     echo $data_8d77 ?: '';
-                } elseif (is_resource($data_8d77)) {
+                } elseif (SingleMVC::instanceof($data_8d77, ['GdImage', 'gd'])) {
                     imagepng($data_8d77);
                 }
             } elseif ($scd) {
@@ -597,7 +624,7 @@ class SingleMVC {
 
     /**
      * 取得或設定 session
-     * @param string|array $key 索引
+     * @param string|string[] $key 索引
      * @param mixed $value 數值
      * @return mixed
      */
@@ -619,7 +646,7 @@ class SingleMVC {
 
     /**
      * 取得或設定 cookie
-     * @param string|array $key 索引
+     * @param string|string[] $key 索引
      * @param mixed $value 數值
      * @param int|array $expires 逾時時間/選項
      * @param string $path 路徑
@@ -648,7 +675,7 @@ class SingleMVC {
 
     /**
      * 取得語系內容
-     * @param string|array $key 索引
+     * @param string|string[] $key 索引
      * @return string|array
      */
     public static function lang($key = '') {
@@ -1185,16 +1212,9 @@ abstract class Model {
      * @return string|array|false
      */
     protected static function request_run($handlers, $start = 0, $length = -1, $get_header = false) {
-        $is_handler = function($handler) {
-            // 檢查是否為資源
-            if (version_compare(PHP_VERSION, '8.0', '<')) {
-                return gettype($handler) === 'resource' && get_resource_type($handler) === 'curl';
-            } else {
-                return $handler instanceof CurlHandle;
-            }
-        };
         $is_one = false;
-        if ($is_handler($handlers)) {
+        $handlers_types = ['CurlHandle', 'curl'];
+        if (SingleMVC::instanceof($handlers, $handlers_types)) {
             $handlers = [$handlers];
             $start = 0;
             $length = -1;
@@ -1212,8 +1232,8 @@ abstract class Model {
         }
         $end = $start + $length;
         $is_named = false;
-        if (!$is_handler($handlers[$start])) {
-            if ($is_handler($handlers[$start]['request'])) {
+        if (!SingleMVC::instanceof($handlers[$start], $handlers_types)) {
+            if (SingleMVC::instanceof($handlers[$start]['request'], $handlers_types)) {
                 $is_named = true;
             } else {
                 return [];
@@ -1323,7 +1343,7 @@ function header_404() {
 
 /**
  * 取得輸入的資料
- * @param mixed $key 索引名稱
+ * @param string|string[] $key 索引名稱
  * @param string $type 資料總類
  * @return mixed
  */
@@ -1344,7 +1364,7 @@ function output($view, $data = [], $flag = false) {
 
 /**
  * 取得或設定 Session
- * @param string|array $key 索引
+ * @param string|string[] $key 索引
  * @param mixed $value 數值
  * @return mixed
  */
@@ -1354,7 +1374,7 @@ function session($key, $value = null) {
 
 /**
  * 取得或設定 Cookie
- * @param string|array $key 索引
+ * @param string|string[] $key 索引
  * @param mixed $value 數值
  * @param int|array $expires 逾時時間/選項
  * @param string $path 路徑
@@ -1369,7 +1389,7 @@ function cookie($key, $value = null, $expires = 0, $path = '', $domain = '', $se
 
 /**
  * 取得語系內容
- * @param string|array $key 索引
+ * @param string|string[] $key 索引
  * @return string|array
  */
 function lang($key = '') {

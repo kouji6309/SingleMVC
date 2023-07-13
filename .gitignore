@@ -2,9 +2,12 @@
 /SingleMVC.wiki/*
 /tests/result
 /tests/result/*
+/vendor
+/vendor/*
 /.vs
 /.vs/*
 *.phpproj
 *.phpproj.user
 *.sln
 *.cache
+*.lock
