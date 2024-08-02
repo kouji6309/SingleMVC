@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.23.713');
+define('VERSION', '1.24.802');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -334,8 +334,8 @@ class SingleMVC {
             }
 
             // 檢查子目錄
+            $path = $controller_dir.DS.$urls[0];
             if ($pc !== $urls[0]) {
-                $path = $controller_dir.DS.$urls[0];
                 if (self::require($path.'.php')) {
                     $pc = $urls[0];
                     continue;
@@ -344,7 +344,12 @@ class SingleMVC {
                 }
                 array_shift($urls);
             } else {
-                break;
+                if (file_exists($path) && is_dir($path)) {
+                    $controller_dir = $path;
+                    array_shift($urls);
+                } else {
+                    break;
+                }
             }
         }
 
