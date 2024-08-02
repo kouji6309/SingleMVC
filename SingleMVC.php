@@ -149,7 +149,7 @@ class SingleMVC {
                 // 用邊界分割
                 $blocks = preg_split('/-+'.$boundary[0].'/', $raw);
                 array_pop($blocks);
-                foreach($blocks as $block) {
+                foreach ($blocks as $block) {
                     $block = ltrim($block);
                     if (empty($block)) {
                         continue;
@@ -164,18 +164,20 @@ class SingleMVC {
                         $save_result = file_put_contents($tmp_path, preg_replace('/Content-Type: (.*)[^\n\r]/', '', $split_content[3]));
                         // 解析巢狀索引
                         mb_parse_str(urlencode($split_content[1]).'=temp', $parsed_str);
-                        while (is_array($parsed_str = $parsed_str[$key_list[] = key($parsed_str)]));
+                        while (is_array($parsed_str = $parsed_str[$key_list[] = key($parsed_str)])) {
+                        }
                         $key_list = array_reverse($key_list);
                         // 取主要參數名稱
                         $id = array_pop($key_list);
                         $file_data = [];
-                        foreach ([
-                            'name' => $split_content[2],
-                            'type' => trim($split_content_type[1]),
+                        $fields = [
+                            'name'     => $split_content[2],
+                            'type'     => trim($split_content_type[1]),
                             'tmp_name' => $tmp_path,
-                            'error' => ($save_result === FALSE) ? $save_result : 0,
-                            'size'=> filesize($tmp_path)
-                        ] as $key => $val) {
+                            'error'    => ($save_result === FALSE) ? $save_result : 0,
+                            'size'     => filesize($tmp_path)
+                        ];
+                        foreach ($fields as $key => $val) {
                             $file_data[$id][$key] = $val;
                             // 重組巢狀索引
                             foreach ($key_list as $k) {
@@ -348,8 +350,8 @@ class SingleMVC {
 
         if ($class != null && $method != null) {
             return [
-                'class' => $class,
-                'method' => $method,
+                'class'     => $class,
+                'method'    => $method,
                 'parameter' => $parameter
             ];
         } elseif ($default != '404') {
@@ -375,14 +377,18 @@ class SingleMVC {
         // 檢查可用方法
         if (is_callable([$class, $rm = ($method.'_'.self::$method)])) {
             return [
-                'class' => $class,
+                'class'  => $class,
                 'method' => $rm
             ];
-        } elseif (self::$method == 'get' && array_sum(array_map(function($v) use($method) {
-            return str_ends_with($method, '_'.$v) ? 1 : 0;
-        }, self::$allowed_method)) !== 1 && is_callable([$class, $method])) {
+        } elseif (
+            self::$method == 'get' &&
+            array_sum(array_map(function ($v) use ($method) {
+                return str_ends_with($method, '_'.$v) ? 1 : 0;
+            }, self::$allowed_method)) !== 1 &&
+            is_callable([$class, $method])
+        ) {
             return [
-                'class' => $class,
+                'class'  => $class,
                 'method' => $method
             ];
         }
@@ -467,7 +473,7 @@ class SingleMVC {
      * @param string|string[] $types
      * @return bool
      */
-    public static function instanceof($var, $types) {
+    public static function is_instanceof($var, $types) {
         if (is_string($types)) {
             $types = [$types];
         }
@@ -486,6 +492,11 @@ class SingleMVC {
             }
         }
         return false;
+    }
+
+    public static function instanceof ($var, $types) {
+        trigger_error('Deprecated: The starts_with() function is deprecated', E_USER_DEPRECATED);
+        return SingleMVC::is_instanceof($var, $types);
     }
 
     /**
@@ -603,14 +614,14 @@ class SingleMVC {
                 header('Content-Type: image/jpeg');
                 if (is_string($data_8d77)) {
                     echo $data_8d77 ?: '';
-                } elseif (SingleMVC::instanceof($data_8d77, ['GdImage', 'gd'])) {
+                } elseif (SingleMVC::is_instanceof($data_8d77, ['GdImage', 'gd'])) {
                     imagejpeg($data_8d77);
                 }
             } elseif (str_ends_with($view_1bda, 'png')) {
                 header('Content-Type: image/png');
                 if (is_string($data_8d77)) {
                     echo $data_8d77 ?: '';
-                } elseif (SingleMVC::instanceof($data_8d77, ['GdImage', 'gd'])) {
+                } elseif (SingleMVC::is_instanceof($data_8d77, ['GdImage', 'gd'])) {
                     imagepng($data_8d77);
                 }
             } elseif ($scd) {
@@ -736,9 +747,9 @@ class SingleMVC {
         ini_set('max_execution_time', 3600);
         clearstatcache();
         $result = [
-            'status' => -1,
+            'status'  => -1,
             'message' => '',
-            'log' => '',
+            'log'     => '',
         ];
         $dir = sys_get_temp_dir();
         $file = $dir.DS.'composer.phar';
@@ -761,8 +772,7 @@ class SingleMVC {
                 $application->setAutoExit(false);
                 $result['status'] = $application->run($input, $output);
                 $result['log'] = $output->fetch();
-            }
-            catch(Exception $ex) {
+            } catch (Exception $ex) {
                 $result['status'] = -4;
                 $result['message'] = $ex->getMessage();
                 $result['log'] = $ex->getTraceAsString();
@@ -784,17 +794,17 @@ class SingleMVC {
             $result = version_compare(VERSION, $temp[0]);
             self::$config->auto_update && $result < 0 && file_put_contents(__FRAMEWORK__, $source);
             return !$details ? $result < 0 : [
-                'result' => $result,
-                'online' => $temp[0],
+                'result'  => $result,
+                'online'  => $temp[0],
                 'current' => VERSION,
-                'file' => $source,
+                'file'    => $source,
             ];
         } else {
             return !$details ? false : [
-                'result' => 0,
-                'online' => 'unknow',
+                'result'  => 0,
+                'online'  => 'unknow',
                 'current' => VERSION,
-                'file' => null,
+                'file'    => null,
             ];
         }
     }
@@ -835,12 +845,14 @@ class FrameworkConfig {
 
 /** 控制器基底 */
 abstract class Controller {
-    public function __construct() { }
+    public function __construct() {
+    }
 }
 
 /** 模組基底 */
 abstract class Model {
-    public function __construct() { }
+    public function __construct() {
+    }
 
     /**
      * 建立密碼的雜湊值
@@ -890,10 +902,10 @@ abstract class Model {
                         // 處理舊版設定
                         // trigger_error('Deprecated: The database config structure is deprecated', E_USER_DEPRECATED);
                         $config = [
-                            'dsn' => 'mysql:host='.($config['host'] ?? 'localhost').(!empty($config['name']) ? ';dbname='.$config['name'] : '').';charset=utf8mb4',
+                            'dsn'      => 'mysql:host='.($config['host'] ?? 'localhost').(!empty($config['name']) ? ';dbname='.$config['name'] : '').';charset=utf8mb4',
                             'username' => $config['username'] ?? 'root',
                             'password' => $config['password'] ?? '',
-                            'options' => [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4', PDO::ATTR_EMULATE_PREPARES => false],
+                            'options'  => [PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4', PDO::ATTR_EMULATE_PREPARES => false],
                         ];
                     }
                 }
@@ -907,8 +919,8 @@ abstract class Model {
                 }
                 $this->db_pdo = &self::$db_pdo_list[$index];
             }
+        } catch (Exception $ex) {
         }
-        catch (Exception $ex) { }
         return $this->db_pdo != null;
     }
 
@@ -1214,7 +1226,7 @@ abstract class Model {
     protected static function request_run($handlers, $start = 0, $length = -1, $get_header = false) {
         $is_one = false;
         $handlers_types = ['CurlHandle', 'curl'];
-        if (SingleMVC::instanceof($handlers, $handlers_types)) {
+        if (SingleMVC::is_instanceof($handlers, $handlers_types)) {
             $handlers = [$handlers];
             $start = 0;
             $length = -1;
@@ -1232,8 +1244,8 @@ abstract class Model {
         }
         $end = $start + $length;
         $is_named = false;
-        if (!SingleMVC::instanceof($handlers[$start], $handlers_types)) {
-            if (SingleMVC::instanceof($handlers[$start]['request'], $handlers_types)) {
+        if (!SingleMVC::is_instanceof($handlers[$start], $handlers_types)) {
+            if (SingleMVC::is_instanceof($handlers[$start]['request'], $handlers_types)) {
                 $is_named = true;
             } else {
                 return [];
@@ -1252,7 +1264,7 @@ abstract class Model {
             curl_multi_select($multi_handler);
         } while ($is_active > 0);
         for ($i = $start; $i < $end; $i++) {
-            curl_multi_remove_handle($multi_handler, $is_named ? $handlers[$i]['request']: $handlers[$i]);
+            curl_multi_remove_handle($multi_handler, $is_named ? $handlers[$i]['request'] : $handlers[$i]);
         }
         curl_multi_close($multi_handler);
 
@@ -1280,7 +1292,7 @@ abstract class Model {
     protected static function request_parse($response) {
         if (empty($response)) {
             return [
-                'header' => [],
+                'header'  => [],
                 'content' => '',
             ];
         }
@@ -1294,7 +1306,7 @@ abstract class Model {
 
         // 解析回應標頭
         foreach ($headers as $header) {
-            if (preg_match('/([^:]+): (.+)/m', $header, $split_header) ) {
+            if (preg_match('/([^:]+): (.+)/m', $header, $split_header)) {
                 $split_header[1] = preg_replace_callback('/(?<=^|[\x09\x20\x2D])./', function ($r) {
                     return strtoupper($r[0]);
                 }, strtolower(trim($split_header[1])));
@@ -1314,7 +1326,9 @@ abstract class Model {
  */
 class BCBA235AA0401FD10464DF6AFBFAAB77 extends Controller {
     public function __construct() {
-        if (self::check()) exit(header_404());
+        if (self::check()) {
+            exit(header_404());
+        }
     }
 
     public static function check() {
@@ -1572,7 +1586,7 @@ function check_for_updates($details = false) {
  * @return string
  */
 function jwt_encode($data, $secret) {
-    $header = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', 'typ'=> 'JWT'])));
+    $header = str_replace('=', '', base64_encode(json_encode(['alg' => 'HS256', 'typ' => 'JWT'])));
     $payload = str_replace('=', '', base64_encode(json_encode($data)));
     $signature = str_replace('=', '', base64_encode(hash_hmac('sha256', $header.'.'.$payload, $secret, true)));
     return $header.'.'.$payload.'.'.$signature;
@@ -1609,7 +1623,10 @@ function jwt_decode($token, $secret) {
 !defined('ROOT') && define('ROOT', str_replace('/', DS, dirname($_SERVER['SCRIPT_FILENAME'])));
 !defined('SOURCE_DIR') && define('SOURCE_DIR', rtrim(ROOT, "/\\").DS.'source');
 !defined('__FRAMEWORK__') && define('__FRAMEWORK__', __FILE__);
-!defined('PAUSE') && register_shutdown_function(function () { new SingleMVC(); exit(); });
+!defined('PAUSE') && register_shutdown_function(function () {
+    new SingleMVC();
+    exit();
+});
 SingleMVC::$config = new FrameworkConfig();
 SingleMVC::autoload_register();
 #endregion
