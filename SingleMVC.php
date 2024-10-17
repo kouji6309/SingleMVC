@@ -1,6 +1,6 @@
 <?php
 #region SingleMVC
-define('VERSION', '1.24.802');
+define('VERSION', '1.24.1017');
 header('Framework: SingleMVC '.VERSION);
 ob_start();
 
@@ -373,6 +373,10 @@ class SingleMVC {
      * @return array|bool
      */
     private static function get_callable($class, $method) {
+        // 轉換成有效名稱
+        $class = self::make_valid_name($class);
+        $method = self::make_valid_name($method);
+
         // 檢查繼承
         if (!class_exists($class) || !is_subclass_of($class, 'Controller')) {
             return false;
@@ -398,6 +402,22 @@ class SingleMVC {
             ];
         }
         return false;
+    }
+
+    /**
+     * 將字串轉成有效的命名
+     * @param string $name 名稱
+     * @return string
+     */
+    private static function make_valid_name($name) {
+        // 取代無效字元
+        $name = preg_replace('/[\x00-\/:-@[-^`{-~]/', '_', $name);
+
+        // 開頭為數字，增加底線
+        if (preg_match('/^\d/', $name)) {
+            $name = '_' . $name;
+        }
+        return $name;
     }
 
     /**
