@@ -26,6 +26,7 @@ class SingleMVC {
 
     private static $is_ran = false;
     private static $is_loaded = false;
+    private static $autoload_on = true;
     private static $file_list = null;
     private static $method = 'get';
     private static $uri_data = [];
@@ -238,6 +239,10 @@ class SingleMVC {
 
         // 自動載入 與 Composer
         spl_autoload_register(function ($class) {
+            if (!self::$autoload_on) {
+                return;
+            }
+
             $dirs = [SOURCE_DIR.DS.'models', SOURCE_DIR.DS.'controllers'];
             if (!self::require($dirs[0].DS.str_replace('\\', DS, ltrim($class, '\\')).'.php') && !str_contains($class, '\\')) {
                 if (self::$file_list == null) {
@@ -377,10 +382,13 @@ class SingleMVC {
         $class = self::make_valid_name($class);
         $method = self::make_valid_name($method);
 
+        self::$autoload_on = false;
         // 檢查繼承
         if (!class_exists($class) || !is_subclass_of($class, 'Controller')) {
             return false;
         }
+        self::$autoload_on = true;
+
         $class = new $class();
 
         // 檢查可用方法
